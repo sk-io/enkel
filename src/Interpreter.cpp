@@ -501,6 +501,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		
 		Class_Decl decl;
 		decl.name = sub->name;
+		decl.parent = sub->parent;
 
 		for (const auto& member : sub->members) {
 			eval_node(member.get(), &decl.scope, selected_obj);
@@ -527,6 +528,25 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 
 		instance->class_name = sub->name;
 		instance->scope.definitions = class_decl.scope.definitions;
+
+		std::string cur = class_decl.parent;
+		while (!cur.empty()) {
+			if (class_decls.find(cur) == class_decls.end()) {
+				error("class not found: " + cur);
+			}
+
+			for (const auto& it : class_decls[cur].scope.definitions) {
+				const std::string& def_name = it.first;
+
+				if (instance->scope.find_def(def_name, false) != nullptr) {
+					error("duplicate variable name: " + def_name);
+				}
+
+				instance->scope.set_def(def_name, it.second.value);
+			}
+
+			cur = class_decls[cur].parent;
+		}
 
 		Definition* constructor = instance->scope.find_def("init", false);
 		if (constructor != nullptr) {

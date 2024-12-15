@@ -34,6 +34,7 @@ struct Extern_Func {
 
 struct Class_Decl {
 	std::string name;
+	std::string parent;
 	Scope scope;
 
 	Class_Decl() : scope(nullptr) {}

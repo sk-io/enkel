@@ -156,11 +156,11 @@ struct AST_Subscript : public AST_Node {
 };
 
 struct AST_Class_Decl : public AST_Node {
-	std::string name;
+	std::string name, parent;
 	std::vector<std::unique_ptr<AST_Node>> members;
 
-	AST_Class_Decl(const std::string& _name) :
-		AST_Node(AST_Node_Type::Class_Decl), name(_name) {}
+	AST_Class_Decl(const std::string& _name, const std::string& _parent) :
+		AST_Node(AST_Node_Type::Class_Decl), name(_name), parent(_parent) {}
 };
 
 struct AST_Implied : public AST_Node {

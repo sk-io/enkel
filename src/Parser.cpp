@@ -338,10 +338,16 @@ std::unique_ptr<AST_Node> Parser::parse_func_decl() {
 std::unique_ptr<AST_Node> Parser::parse_class_decl() {
     eat(Token_Type::Keyword_Class);
     std::string name = eat(Token_Type::Identifier).str;
+    std::string parent;
+
+    if (peek().type == Token_Type::Keyword_Extends) {
+        eat(Token_Type::Keyword_Extends);
+        parent = eat(Token_Type::Identifier).str;
+    }
 
     eat(Token_Type::Open_Curly);
 
-    auto class_decl = std::make_unique<AST_Class_Decl>(name);
+    auto class_decl = std::make_unique<AST_Class_Decl>(name, parent);
 
     while (peek().type != Token_Type::Closed_Curly) {
         const Token& next = peek();
