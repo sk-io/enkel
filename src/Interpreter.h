@@ -55,7 +55,7 @@ public:
 	std::string val_to_str(const Value& val) const;
 
 	Value call_function(Value func_ref, const std::vector<Value>& args, GC_Obj_Instance* obj);
-
+	Value create_string(const std::string& str);
 private:
 	Eval_Result eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance* selected_obj = nullptr);
 	void error(const std::string& msg = "") const;

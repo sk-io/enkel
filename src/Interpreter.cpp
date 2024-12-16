@@ -4,6 +4,51 @@
 #include <iostream>
 
 Interpreter::Interpreter() {
+	Extern_Func func_typeof;
+	func_typeof.name = "typeof";
+	func_typeof.args.push_back({});
+	func_typeof.callback = [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		const Value& val = args[0];
+
+		std::string result;
+		switch (val.type) {
+		case Value_Type::Null:
+			result = "null";
+			break;
+		case Value_Type::Num:
+			result = "number";
+			break;
+		case Value_Type::Bool:
+			result = "boolean";
+			break;
+		case Value_Type::Func_Ref:
+		case Value_Type::Extern_Func:
+			result = "function";
+			break;
+		case Value_Type::GC_Obj: {
+			GC_Obj* gc_obj = (GC_Obj*) val.as.ptr;
+			switch (gc_obj->type) {
+			case GC_Obj_Type::Array:
+				result = "array";
+				break;
+			case GC_Obj_Type::String:
+				result = "string";
+				break;
+			case GC_Obj_Type::Instance: {
+				GC_Obj_Instance* instance = (GC_Obj_Instance*) gc_obj;
+
+				result = instance->class_name;
+				break;
+			}
+			}
+			break;
+		}
+		}
+
+		return create_string(result);
+	};
+	
+	add_external_func(func_typeof);
 }
 
 Eval_Result Interpreter::eval(AST_Node* node) {
@@ -84,24 +129,28 @@ Value Interpreter::call_function(Value func_ref, const std::vector<Value>& args,
 	return call_result.value;
 }
 
+Value Interpreter::create_string(const std::string& str) {
+	GC_Obj_String* obj = new GC_Obj_String(str);
+	heap.add_obj(obj);
+
+	Value val;
+	val.type = Value_Type::GC_Obj;
+	val.as.ptr = (void*) obj;
+	return val;
+}
+
 // selected_obj is set for children evals calls when using dot operator
 Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance* selected_obj) {
 	switch (node->type) {
 	case AST_Node_Type::Literal: {
 		AST_Literal* sub = (AST_Literal*) node;
+
 		return {sub->val};
 	}
 	case AST_Node_Type::String_Literal: {
 		AST_String_Literal* sub = (AST_String_Literal*) node;
 
-		GC_Obj_String* obj = new GC_Obj_String(sub->str);
-		heap.add_obj(obj);
-
-		Value val;
-		val.type = Value_Type::GC_Obj;
-		val.as.ptr = (void*) obj;
-
-		return {val};
+		return {create_string(sub->str)};
 	}
 	case AST_Node_Type::Bin_Op: {
 		AST_Bin_Op* sub = (AST_Bin_Op*) node;
