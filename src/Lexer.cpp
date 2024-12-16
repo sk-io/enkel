@@ -133,9 +133,9 @@ static Token consume_string_literal(const std::string& input, int& pos) {
 static Token read_next_token(const std::string& input, int& pos) {
 	char c = input[pos];
 
-	if (isalpha(c))
+	if (isalpha(c) || c == '_')
 		return consume_identifier(input, pos);
-
+	
 	if (isdigit(c))
 		return consume_number(input, pos);
 

@@ -6,7 +6,8 @@
 Interpreter::Interpreter() {
 	Extern_Func func_typeof;
 	func_typeof.name = "typeof";
-	func_typeof.args.push_back({});
+	//func_typeof.args.push_back({});
+	func_typeof.num_args = 1;
 	func_typeof.callback = [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
 		const Value& val = args[0];
 
@@ -47,8 +48,26 @@ Interpreter::Interpreter() {
 
 		return create_string(result);
 	};
-	
 	add_external_func(func_typeof);
+
+	Extern_Func func_run_gc;
+	func_run_gc.name = "_run_gc";
+	func_run_gc.callback = [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		// TODO: run from current scope???
+		heap.garbage_collect(global_scope);
+		return {};
+	};
+	add_external_func(func_run_gc);
+
+	Extern_Func func_print;
+	func_print.name = "print";
+	func_print.num_args = 1;
+	func_print.callback = [](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		std::cout << "print(): " << interp.val_to_str(args[0]) << "\n";
+		return {};
+	};
+
+	add_external_func(func_print);
 }
 
 Eval_Result Interpreter::eval(AST_Node* node) {
@@ -104,7 +123,7 @@ Value Interpreter::call_function(Value func_ref, const std::vector<Value>& args,
 	// check if it's an external c++ function
 	if (func_ref.type == Value_Type::Extern_Func) {
 		const Extern_Func& func = external_funcs[func_ref.as.i];
-		if (args.size() != func.args.size()) {
+		if (args.size() != func.num_args) {
 			error("incorrect number of arguments");
 		}
 

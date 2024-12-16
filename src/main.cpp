@@ -45,16 +45,6 @@ int main(int argc, char** argv) {
 	Interpreter interp;
 
 	{
-		Extern_Func test;
-		test.name = "print";
-		test.args.push_back({"doesntmatter"});
-		test.callback = [](Interpreter& interp, const std::vector<Value>& args) -> Value {
-			std::cout << "print(): " << interp.val_to_str(args[0]) << "\n";
-			return Value::null_value();
-		};
-
-		interp.add_external_func(test);
-
 		Eval_Result result = interp.eval(program.get());
 		//std::cout << result.value.as.num << std::endl;
 	}

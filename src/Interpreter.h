@@ -20,7 +20,6 @@ enum class Control_Flow {
 struct Eval_Result {
 	Value value{};
 	Control_Flow cf = Control_Flow::Nothing;
-	//Definition* var = nullptr;
 	Value* ref = nullptr;
 };
 
@@ -28,7 +27,7 @@ class Interpreter;
 
 struct Extern_Func {
 	std::string name;
-	std::vector<Definition> args;
+	int num_args = 0;
 	std::function<Value(Interpreter& interp, const std::vector<Value>&)> callback;
 };
 
@@ -38,7 +37,6 @@ struct Class_Decl {
 	Scope scope;
 
 	Class_Decl() : scope(nullptr) {}
-	//std::unordered_map<std::string, Definition> members;
 };
 
 class Interpreter {

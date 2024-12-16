@@ -46,7 +46,7 @@ struct GC_Obj_Table : public GC_Obj {
 
 struct GC_Obj_Instance : public GC_Obj {
 	std::string class_name;
-	Scope scope; // TODO: inheritance using parent scope
+	Scope scope;
 	// TODO: dont copy function reference values
 
 	GC_Obj_Instance(const Scope& _scope) :
