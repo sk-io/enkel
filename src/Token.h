@@ -30,6 +30,7 @@ enum class Token_Type {
     Keyword_This,
     Keyword_New,
     Keyword_Extends,
+    Keyword_Is,
     Plus,
     Minus,
     Multiply,
@@ -73,6 +74,7 @@ struct Token {
         case Token_Type::Less_Than:
         case Token_Type::Less_Than_Equals:
         case Token_Type::Dot:
+        case Token_Type::Keyword_Is:
             return true;
         }
         return false;

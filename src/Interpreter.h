@@ -57,7 +57,7 @@ public:
 	Value call_function(Value func_ref, const std::vector<Value>& args, GC_Obj_Instance* obj);
 
 private:
-	Eval_Result eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance* selected_obj);
+	Eval_Result eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance* selected_obj = nullptr);
 	void error(const std::string& msg = "") const;
 
 	Scope global_scope;

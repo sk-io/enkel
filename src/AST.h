@@ -64,6 +64,7 @@ enum class Bin_Op {
 	Less_Than,
 	Less_Than_Equals,
 	Dot,
+	Is,
 };
 
 struct AST_Bin_Op : public AST_Node {

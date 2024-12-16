@@ -17,6 +17,7 @@ static constexpr Bin_Op get_bin_op(Token_Type type) {
     case Token_Type::Less_Than: return Bin_Op::Less_Than;
     case Token_Type::Less_Than_Equals: return Bin_Op::Less_Than_Equals;
     case Token_Type::Dot: return Bin_Op::Dot;
+    case Token_Type::Keyword_Is: return Bin_Op::Is;
     }
 
     assert(false);
@@ -41,8 +42,10 @@ static constexpr int get_precedence(Bin_Op op) {
     case Bin_Op::Mul:
     case Bin_Op::Div:
         return 5;
-    case Bin_Op::Dot:
+    case Bin_Op::Is:
         return 6;
+    case Bin_Op::Dot:
+        return 7;
     }
     assert(false);
     return -1;

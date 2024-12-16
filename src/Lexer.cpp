@@ -47,6 +47,8 @@ static Token consume_identifier(const std::string& input, int& pos) {
 		type = Token_Type::Keyword_New;
 	if (str == "extends")
 		type = Token_Type::Keyword_Extends;
+	if (str == "is")
+		type = Token_Type::Keyword_Is;
 
 	if (str == "true") {
 		type = Token_Type::Boolean_Literal;

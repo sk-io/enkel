@@ -80,7 +80,7 @@ Value Interpreter::call_function(Value func_ref, const std::vector<Value>& args,
 		func_scope.set_def(func_decl->args[i].name, args[i]);
 	}
 
-	Eval_Result call_result = eval_node(func_decl->body.get(), &func_scope, nullptr);
+	Eval_Result call_result = eval_node(func_decl->body.get(), &func_scope);
 	return call_result.value;
 }
 
@@ -110,9 +110,9 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 			// NOTE: evaluate right side first, since it can cause container resizes
 			// and create memory corruption
 
-			Value rval = eval_node(sub->right.get(), scope, selected_obj).value;
+			Value rval = eval_node(sub->right.get(), scope).value;
 
-			Value* ref = eval_node(sub->left.get(), scope, selected_obj).ref;
+			Value* ref = eval_node(sub->left.get(), scope).ref;
 			assert(ref != nullptr);
 
 			*ref = rval;
@@ -126,7 +126,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		if (sub->op == Bin_Op::Dot) {
 			// dot operator needs to not immediately change scope,
 			// but store the scope and change when rightside function call happens
-			Value lval = eval_node(sub->left.get(), scope, selected_obj).value;
+			Value lval = eval_node(sub->left.get(), scope).value;
 			if (lval.type != Value_Type::GC_Obj) {
 				error("expected class instance");
 			}
@@ -147,61 +147,35 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 			}
 
 			GC_Obj_Instance* instance = (GC_Obj_Instance*) gc_obj;
-			/*
-			if (sub->right->type == AST_Node_Type::Var) {
-				AST_Var* var = (AST_Var*) sub->right.get();
-
-				const Definition& def = *instance->scope.find_def(var->name);
-
-				return {def.value};
-			} else if (sub->right->type == AST_Node_Type::Func_Call) {
-				// TODO: do this properly
-				// allow for thing.list[2](); etc..
-				AST_Func_Call* func_call = (AST_Func_Call*) sub->right.get();
-				assert(func_call->expr->type == AST_Node_Type::Var);
-				AST_Var* var = (AST_Var*) func_call->expr.get();
-
-				const Definition& def = *instance->scope.find_def(var->name);
-				const Value& func_ref = def.value;
-
-				// evaluate caller argument expressions
-				std::vector<Value> arg_evals;
-				for (auto& arg : func_call->args) {
-					arg_evals.push_back(eval_node(arg.get(), scope, selected_obj).value);
-				}
-
-				assert(func_ref.type != Value_Type::Extern_Func);
-
-				AST_Func_Decl* func_decl = (AST_Func_Decl*) func_ref.as.ptr;
-				if (func_call->args.size() != func_decl->args.size()) {
-					error("incorrect number of arguments");
-				}
-
-				Scope func_scope(&instance->scope);
-
-				func_scope.set_def("this", lval);
-
-				// put evaluated args in callee scope
-				for (int i = 0; i < func_decl->args.size(); i++) {
-					func_scope.set_def(func_decl->args[i].name, arg_evals[i]);
-				}
-
-				Eval_Result call_result = eval_node(func_decl->body.get(), &func_scope, selected_obj);
-
-				Eval_Result result;
-				result.ref = call_result.ref;
-				result.value = call_result.value;
-				return result;
-			} else {
-				error("expected var access or func call");
-			}
-			*/
-
 			return eval_node(sub->right.get(), scope, instance);
 		}
+		
+		if (sub->op == Bin_Op::Is) {
+			Value lval = eval_node(sub->left.get(), scope).value;
 
-		Value lval = eval_node(sub->left.get(), scope, selected_obj).value;
-		Value rval = eval_node(sub->right.get(), scope, selected_obj).value;
+			if (lval.type != Value_Type::GC_Obj) {
+				return {Value::from_bool(false)};
+			}
+
+			GC_Obj* gc_obj = (GC_Obj*) lval.as.ptr;
+			if (gc_obj->type != GC_Obj_Type::Instance) {
+				// TODO: x is String?
+				return {Value::from_bool(false)};
+			}
+
+			if (sub->right->type != AST_Node_Type::Var) {
+				error("expected type name");
+			}
+
+			AST_Var* compare = (AST_Var*) sub->right.get();
+			GC_Obj_Instance* inst = (GC_Obj_Instance*) gc_obj;
+
+			// TODO: check parent class
+			return {Value::from_bool(inst->class_name == compare->name)};
+		}
+
+		Value lval = eval_node(sub->left.get(), scope).value;
+		Value rval = eval_node(sub->right.get(), scope).value;
 
 		if (lval.type == Value_Type::Num && rval.type == Value_Type::Num) {
 			Value val;
@@ -283,7 +257,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 	case AST_Node_Type::Block: {
 		AST_Block* sub = (AST_Block*) node;
 		for (auto& statement : sub->statements) {
-			auto result = eval_node(statement.get(), scope, selected_obj);
+			auto result = eval_node(statement.get(), scope);
 
 			if (result.cf != Control_Flow::Nothing)
 				return result;
@@ -298,7 +272,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 
 		Value val = Value::null_value();
 		if (sub->init != nullptr) {
-			val = eval_node(sub->init.get(), scope, selected_obj).value;
+			val = eval_node(sub->init.get(), scope).value;
 		}
 
 		scope->set_def(sub->name, val);
@@ -342,7 +316,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 	case AST_Node_Type::Return: {
 		AST_Return* sub = (AST_Return*) node;
 
-		Value ret_val = eval_node(sub->expr.get(), scope, selected_obj).value;
+		Value ret_val = eval_node(sub->expr.get(), scope).value;
 		
 		Eval_Result result;
 		result.cf = Control_Flow::Return;
@@ -352,6 +326,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 	case AST_Node_Type::Func_Call: {
 		AST_Func_Call* sub = (AST_Func_Call*) node;
 
+		// foo.bar(); foo is selected_obj
 		Value func_ref = eval_node(sub->expr.get(), scope, selected_obj).value;
 		if (func_ref.type != Value_Type::Func_Ref && func_ref.type != Value_Type::Extern_Func) {
 			error("no such function");
@@ -360,7 +335,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		// evaluate caller argument expressions
 		std::vector<Value> arg_evals;
 		for (auto& arg : sub->args) {
-			arg_evals.push_back(eval_node(arg.get(), scope, selected_obj).value);
+			arg_evals.push_back(eval_node(arg.get(), scope).value);
 		}
 
 		Value result = call_function(func_ref, arg_evals, selected_obj);
@@ -369,7 +344,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 	case AST_Node_Type::If: {
 		AST_Conditional* sub = (AST_Conditional*) node;
 		
-		Value cond_val = eval_node(sub->condition.get(), scope, selected_obj).value;
+		Value cond_val = eval_node(sub->condition.get(), scope).value;
 
 		if (cond_val.type != Value_Type::Bool) {
 			error("expected bool");
@@ -377,7 +352,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 
 		if (cond_val.as._bool) {
 			Scope new_scope(scope);
-			eval_node(sub->body.get(), &new_scope, selected_obj);
+			return eval_node(sub->body.get(), &new_scope);
 		}
 		
 		return {};
@@ -387,7 +362,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 
 		Scope new_scope(scope);
 		while (true) {
-			Value cond_val = eval_node(sub->condition.get(), scope, selected_obj).value;
+			Value cond_val = eval_node(sub->condition.get(), scope).value;
 
 			if (cond_val.type != Value_Type::Bool) {
 				error("expected bool");
@@ -397,7 +372,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 				break;
 			}
 
-			eval_node(sub->body.get(), &new_scope, selected_obj);
+			eval_node(sub->body.get(), &new_scope);
 		}
 
 		return {};
@@ -407,7 +382,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 
 		Scope new_scope(scope);
 
-		Value expr_val = eval_node(sub->expr.get(), scope, selected_obj).value;
+		Value expr_val = eval_node(sub->expr.get(), scope).value;
 
 		if (expr_val.type == Value_Type::Num) {
 			int count = (int) expr_val.as.num;
@@ -456,7 +431,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		heap.add_obj(gc_obj);
 
 		for (auto& item : sub->items) {
-			gc_obj->arr.push_back(eval_node(item.get(), scope, selected_obj).value);
+			gc_obj->arr.push_back(eval_node(item.get(), scope).value);
 		}
 
 		Value val;
@@ -468,7 +443,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 	case AST_Node_Type::Subscript: {
 		AST_Subscript* sub = (AST_Subscript*) node;
 
-		Value expr_val = eval_node(sub->expr.get(), scope, selected_obj).value;
+		Value expr_val = eval_node(sub->expr.get(), scope).value;
 		if (expr_val.type != Value_Type::GC_Obj) {
 			error("expected gc obj");
 		}
@@ -478,7 +453,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 			error("i can only subscript arrays man");
 		}
 
-		Value subscript_val = eval_node(sub->subscript.get(), scope, selected_obj).value;
+		Value subscript_val = eval_node(sub->subscript.get(), scope).value;
 		if (subscript_val.type != Value_Type::Num) {
 			error("not a number");
 		}
@@ -504,7 +479,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		decl.parent = sub->parent;
 
 		for (const auto& member : sub->members) {
-			eval_node(member.get(), &decl.scope, selected_obj);
+			eval_node(member.get(), &decl.scope);
 		}
 
 		if (class_decls.find(decl.name) != class_decls.end()) {
@@ -539,7 +514,9 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 				const std::string& def_name = it.first;
 
 				if (instance->scope.find_def(def_name, false) != nullptr) {
-					error("duplicate variable name: " + def_name);
+					// TODO: proper error handling, cant overload a var with a func etc.
+					//error("duplicate variable name: " + def_name);
+					continue;
 				}
 
 				instance->scope.set_def(def_name, it.second.value);
