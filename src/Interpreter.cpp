@@ -440,7 +440,13 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 				break;
 			}
 
-			eval_node(sub->body.get(), &new_scope);
+			const auto& body_result = eval_node(sub->body.get(), &new_scope);
+
+			if (body_result.cf == Control_Flow::Return)
+				return body_result;
+			if (body_result.cf == Control_Flow::Break)
+				break;
+			// on continue, do nothing
 		}
 
 		return {};
@@ -459,9 +465,13 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 			while (i < count) {
 				new_scope.set_def(sub->var_name, Value::from_num(i));
 
-				eval_node(sub->body.get(), &new_scope, nullptr);
+				const auto& body_result = eval_node(sub->body.get(), &new_scope, nullptr);
 
-				// TODO: control flow
+				if (body_result.cf == Control_Flow::Return)
+					return body_result;
+				if (body_result.cf == Control_Flow::Break)
+					break;
+				// on continue, do nothing
 				i++;
 			}
 
@@ -620,6 +630,16 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		Eval_Result result;
 		result.value = val;
 		result.ref = &val;
+		return result;
+	}
+	case AST_Node_Type::Break: {
+		Eval_Result result;
+		result.cf = Control_Flow::Break;
+		return result;
+	}
+	case AST_Node_Type::Continue: {
+		Eval_Result result;
+		result.cf = Control_Flow::Continue;
 		return result;
 	}
 	default:

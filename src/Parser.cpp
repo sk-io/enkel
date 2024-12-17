@@ -140,6 +140,22 @@ std::unique_ptr<AST_Node> Parser::parse_statement() {
         return std::make_unique<AST_Return>(std::move(expr));
     }
 
+    // break
+    if (peek().type == Token_Type::Keyword_Break) {
+        eat(Token_Type::Keyword_Break);
+        eat(Token_Type::Semicolon);
+
+        return std::make_unique<AST_Implied>(AST_Node_Type::Break);
+    }
+
+    // continue
+    if (peek().type == Token_Type::Keyword_Continue) {
+        eat(Token_Type::Keyword_Continue);
+        eat(Token_Type::Semicolon);
+
+        return std::make_unique<AST_Implied>(AST_Node_Type::Continue);
+    }
+
     // expression
     auto expr = parse_expression();
     eat(Token_Type::Semicolon);
