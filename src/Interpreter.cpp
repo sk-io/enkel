@@ -111,6 +111,11 @@ std::string Interpreter::val_to_str(const Value& val) const {
 			str += "]";
 			return str;
 		}
+		case GC_Obj_Type::Instance: {
+			GC_Obj_Instance* instance = (GC_Obj_Instance*) obj;
+			// TODO: print members
+			return instance->class_name;
+		}
 		}
 		error();
 	}
@@ -201,12 +206,48 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 
 			GC_Obj* gc_obj = (GC_Obj*) lval.as.ptr;
 
-			// array.length hack
+			// TODO: ability to register methods to types?
+			// or just, declare classes externally?
+			// 
+			// array.length
 			if (gc_obj->type == GC_Obj_Type::Array && sub->right->type == AST_Node_Type::Var) {
 				GC_Obj_Array* arr = (GC_Obj_Array*) gc_obj;
 				AST_Var* var = (AST_Var*) sub->right.get();
 				if (var->name == "length") {
 					return {Value::from_num(arr->arr.size())};
+				}
+			}
+
+			// array methods
+			if (gc_obj->type == GC_Obj_Type::Array && sub->right->type == AST_Node_Type::Func_Call) {
+				GC_Obj_Array* arr = (GC_Obj_Array*) gc_obj;
+
+				AST_Func_Call* fcall = (AST_Func_Call*) sub->right.get();
+				if (fcall->expr->type != AST_Node_Type::Var) {
+					error();
+				}
+
+				AST_Var* var = (AST_Var*) fcall->expr.get();
+
+				// array.push(val)
+				if (var->name == "push") {
+					if (fcall->args.size() != 1) {
+						error("incorrect number of args");
+					}
+
+					arr->arr.push_back(eval_node(fcall->args[0].get(), scope).value);
+					return {};
+				}
+
+				// array.pop()
+				if (var->name == "pop") {
+					if (fcall->args.size() != 0) {
+						error("incorrect number of args");
+					}
+
+					Value val = arr->arr.back();
+					arr->arr.pop_back();
+					return {val};
 				}
 			}
 
@@ -489,9 +530,13 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 				while (i < arr->arr.size()) {
 					new_scope.set_def(sub->var_name, arr->arr[i]);
 
-					eval_node(sub->body.get(), &new_scope, nullptr);
+					const auto& body_result = eval_node(sub->body.get(), &new_scope, nullptr);
 
-					// TODO: control flow
+					if (body_result.cf == Control_Flow::Return)
+						return body_result;
+					if (body_result.cf == Control_Flow::Break)
+						break;
+					// on continue, do nothing
 					i++;
 				}
 
