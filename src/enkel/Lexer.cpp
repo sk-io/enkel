@@ -19,36 +19,38 @@ static Token consume_identifier(const std::string& input, int& pos) {
 
 	if (str == "if")
 		type = Token_Type::Keyword_If;
-	if (str == "func")
+	else if (str == "func")
 		type = Token_Type::Keyword_Func;
-	if (str == "pass")
+	else if (str == "pass")
 		type = Token_Type::Keyword_Pass;
-	if (str == "while")
+	else if (str == "while")
 		type = Token_Type::Keyword_While;
-	if (str == "for")
+	else if (str == "for")
 		type = Token_Type::Keyword_For;
-	if (str == "in")
+	else if (str == "in")
 		type = Token_Type::Keyword_In;
-	if (str == "continue")
+	else if (str == "continue")
 		type = Token_Type::Keyword_Continue;
-	if (str == "break")
+	else if (str == "break")
 		type = Token_Type::Keyword_Break;
-	if (str == "return")
+	else if (str == "return")
 		type = Token_Type::Keyword_Return;
-	if (str == "var")
+	else if (str == "var")
 		type = Token_Type::Keyword_Var;
-	if (str == "class")
+	else if (str == "class")
 		type = Token_Type::Keyword_Class;
-	if (str == "constructor")
+	else if (str == "constructor")
 		type = Token_Type::Keyword_Constructor;
-	if (str == "this")
+	else if (str == "this")
 		type = Token_Type::Keyword_This;
-	if (str == "new")
+	else if (str == "new")
 		type = Token_Type::Keyword_New;
-	if (str == "extends")
+	else if (str == "extends")
 		type = Token_Type::Keyword_Extends;
-	if (str == "is")
+	else if (str == "is")
 		type = Token_Type::Keyword_Is;
+	else if (str == "null")
+		type = Token_Type::Keyword_Null;
 
 	if (str == "true") {
 		type = Token_Type::Boolean_Literal;

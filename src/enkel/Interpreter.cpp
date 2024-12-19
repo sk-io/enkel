@@ -6,7 +6,6 @@
 Interpreter::Interpreter() {
 	Extern_Func func_typeof;
 	func_typeof.name = "typeof";
-	//func_typeof.args.push_back({});
 	func_typeof.num_args = 1;
 	func_typeof.callback = [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
 		const Value& val = args[0];
@@ -379,6 +378,10 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 			}
 		}
 
+		if (lval.type == Value_Type::Null || rval.type == Value_Type::Null) {
+			return {Value::from_bool(lval.type == rval.type)};
+		}
+
 		assert(false);
 		return {};
 	}
@@ -705,6 +708,9 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		Eval_Result result;
 		result.cf = Control_Flow::Continue;
 		return result;
+	}
+	case AST_Node_Type::Null: {
+		return {Value::null_value()};
 	}
 	default:
 		error();

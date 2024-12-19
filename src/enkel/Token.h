@@ -31,6 +31,7 @@ enum class Token_Type {
     Keyword_New,
     Keyword_Extends,
     Keyword_Is,
+    Keyword_Null,
     Plus,
     Minus,
     Multiply,

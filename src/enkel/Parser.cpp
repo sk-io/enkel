@@ -206,6 +206,12 @@ std::unique_ptr<AST_Node> Parser::parse_primary() {
         return std::make_unique<AST_Literal>(token.value);
     }
 
+    // null
+    if (peek().type == Token_Type::Keyword_Null) {
+        eat(Token_Type::Keyword_Null);
+        return std::make_unique<AST_Implied>(AST_Node_Type::Null);
+    }
+
     // array initializer
     if (peek().type == Token_Type::Open_Bracket) {
         eat(Token_Type::Open_Bracket);
@@ -229,11 +235,13 @@ std::unique_ptr<AST_Node> Parser::parse_primary() {
         return arr_init;
     }
 
+    // this
     if (peek().type == Token_Type::Keyword_This) {
         eat(Token_Type::Keyword_This);
         return std::make_unique<AST_Implied>(AST_Node_Type::This);
     }
 
+    // new Foo()
     if (peek().type == Token_Type::Keyword_New) {
         eat(Token_Type::Keyword_New);
 

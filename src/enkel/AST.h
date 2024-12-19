@@ -29,6 +29,7 @@ enum class AST_Node_Type {
 	Class_Decl,
 	This,
 	New,
+	Null,
 };
 
 struct AST_Node {
