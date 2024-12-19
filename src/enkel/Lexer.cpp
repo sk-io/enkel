@@ -51,6 +51,8 @@ static Token consume_identifier(const std::string& input, int& pos) {
 		type = Token_Type::Keyword_Is;
 	else if (str == "null")
 		type = Token_Type::Keyword_Null;
+	else if (str == "else")
+		type = Token_Type::Keyword_Else;
 
 	if (str == "true") {
 		type = Token_Type::Boolean_Literal;

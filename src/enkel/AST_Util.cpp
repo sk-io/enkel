@@ -62,10 +62,19 @@ void print_ast(AST_Node* node, int depth) {
 		print_ast(sub->expr.get(), depth + 1);
 		break;
 	}
-	case AST_Node_Type::If:
+	case AST_Node_Type::If: {
+		AST_If* sub = (AST_If*) node;
+		std::cout << "AST_If\n";
+
+		print_ast(sub->condition.get(), depth + 1);
+		print_ast(sub->if_body.get(), depth + 1);
+		if (sub->else_body != nullptr)
+			print_ast(sub->else_body.get(), depth + 1);
+		break;
+	}
 	case AST_Node_Type::While: {
-		AST_Conditional* sub = (AST_Conditional*) node;
-		std::cout << "AST_Conditional: " << (node->type == AST_Node_Type::If ? "if" : "while") << "\n";
+		AST_While* sub = (AST_While*) node;
+		std::cout << "AST_While\n";
 
 		print_ast(sub->condition.get(), depth + 1);
 		print_ast(sub->body.get(), depth + 1);

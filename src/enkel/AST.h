@@ -111,12 +111,21 @@ struct AST_Func_Call : public AST_Node {
 		AST_Node(AST_Node_Type::Func_Call), expr(std::move(_expr)) {}
 };
 
-struct AST_Conditional : public AST_Node {
+struct AST_If : public AST_Node {
+	std::unique_ptr<AST_Node> condition;
+	std::unique_ptr<AST_Node> if_body;
+	std::unique_ptr<AST_Node> else_body;
+
+	AST_If(std::unique_ptr<AST_Node> _condition, std::unique_ptr<AST_Node> _if_body, std::unique_ptr<AST_Node> _else_body) :
+		AST_Node(AST_Node_Type::If), condition(std::move(_condition)), if_body(std::move(_if_body)), else_body(std::move(_else_body)) {}
+};
+
+struct AST_While : public AST_Node {
 	std::unique_ptr<AST_Node> condition;
 	std::unique_ptr<AST_Node> body;
 
-	AST_Conditional(AST_Node_Type _type, std::unique_ptr<AST_Node> _condition, std::unique_ptr<AST_Node> _body) :
-		AST_Node(_type), condition(std::move(_condition)), body(std::move(_body)) {}
+	AST_While(std::unique_ptr<AST_Node> _condition, std::unique_ptr<AST_Node> _body) :
+		AST_Node(AST_Node_Type::While), condition(std::move(_condition)), body(std::move(_body)) {}
 };
 
 struct AST_For : public AST_Node {

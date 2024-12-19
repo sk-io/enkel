@@ -14,6 +14,7 @@ enum class Token_Type {
     String_Literal,
     Indentation,
     Keyword_If,
+    Keyword_Else,
     Keyword_Func,
     Keyword_True,
     Keyword_False,

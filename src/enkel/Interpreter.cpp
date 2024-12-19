@@ -379,7 +379,13 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		}
 
 		if (lval.type == Value_Type::Null || rval.type == Value_Type::Null) {
-			return {Value::from_bool(lval.type == rval.type)};
+			if (sub->op == Bin_Op::Equals) {
+				return {Value::from_bool(lval.type == rval.type)};
+			}
+
+			if (sub->op == Bin_Op::Not_Equals) {
+				return {Value::from_bool(lval.type != rval.type)};
+			}
 		}
 
 		assert(false);
@@ -473,7 +479,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		return {result};
 	}
 	case AST_Node_Type::If: {
-		AST_Conditional* sub = (AST_Conditional*) node;
+		AST_If* sub = (AST_If*) node;
 		
 		Value cond_val = eval_node(sub->condition.get(), scope).value;
 
@@ -483,13 +489,16 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 
 		if (cond_val.as._bool) {
 			Scope new_scope(scope);
-			return eval_node(sub->body.get(), &new_scope);
+			return eval_node(sub->if_body.get(), &new_scope);
+		} else if (sub->else_body != nullptr) {
+			Scope new_scope(scope);
+			return eval_node(sub->else_body.get(), &new_scope);
 		}
 		
 		return {};
 	}
 	case AST_Node_Type::While: {
-		AST_Conditional* sub = (AST_Conditional*) node;
+		AST_While* sub = (AST_While*) node;
 
 		Scope new_scope(scope);
 		while (true) {

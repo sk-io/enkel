@@ -44,8 +44,17 @@ std::unique_ptr<AST_Node> Parser::parse_statement() {
         eat(Token_Type::Open_Parenthesis);
         auto cond = parse_expression();
         eat(Token_Type::Closed_Parenthesis);
-        auto body = parse_block();
-        return std::make_unique<AST_Conditional>(AST_Node_Type::If, std::move(cond), std::move(body));
+        auto if_body = parse_block();
+
+        std::unique_ptr<AST_Node> else_body;
+
+        if (peek().type == Token_Type::Keyword_Else) {
+            eat(Token_Type::Keyword_Else);
+
+            else_body = parse_block();
+        }
+
+        return std::make_unique<AST_If>(std::move(cond), std::move(if_body), std::move(else_body));
     }
 
     // while loop
@@ -55,7 +64,7 @@ std::unique_ptr<AST_Node> Parser::parse_statement() {
         auto cond = parse_expression();
         eat(Token_Type::Closed_Parenthesis);
         auto body = parse_block();
-        return std::make_unique<AST_Conditional>(AST_Node_Type::While, std::move(cond), std::move(body));
+        return std::make_unique<AST_While>(std::move(cond), std::move(body));
     }
 
     // for loop
