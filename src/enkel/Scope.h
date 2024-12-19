@@ -9,12 +9,15 @@
 struct GC_Obj_Instance;
 
 struct Scope {
-	Scope(Scope* _parent = nullptr) : parent(_parent) {}
+	Scope(Scope* _parent, GC_Obj_Instance* _this_obj) : parent(_parent), this_obj(_this_obj) {}
 
 	Definition* find_def(const std::string& name, bool recursive = true);
 	void set_def(const std::string& name, const Value& value);
 
+	// parent scope
 	Scope* parent = nullptr;
+	// used for methods in classes
+	GC_Obj_Instance* this_obj = nullptr;
 	// TODO: make sure this doesn't invalidate any pointers to defs when resized
 	// should be impossible, i think?
 	// How it could occur:
@@ -22,6 +25,4 @@ struct Scope {
 	// something adds a new def, causing resize and pointer invalidation
 	// the original pointer is still referenced somehow?
 	std::unordered_map<std::string, Definition> definitions;
-	// used for methods in classes
-	GC_Obj_Instance* this_obj = nullptr;
 };

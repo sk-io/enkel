@@ -36,7 +36,7 @@ struct Class_Decl {
 	std::string parent;
 	Scope scope;
 
-	Class_Decl() : scope(nullptr) {}
+	Class_Decl() : scope(nullptr, nullptr) {}
 };
 
 class Interpreter {

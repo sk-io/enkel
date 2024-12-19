@@ -20,12 +20,12 @@ public:
 	std::unique_ptr<AST_Node> parse_primary();
 
 	std::unique_ptr<AST_Node> parse_var_decl();
-	std::unique_ptr<AST_Node> parse_func_decl();
+	std::unique_ptr<AST_Node> parse_func_decl(bool is_global);
 	std::unique_ptr<AST_Node> parse_class_decl();
 
 private:
 	const Token& peek(int offset = 0);
-	const Token& eat(Token_Type expected);
+	const Token& eat(Token_Type expected = Token_Type::Any);
 
 	void error(const std::string& msg = "") const;
 

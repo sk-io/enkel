@@ -135,26 +135,28 @@ static Token consume_string_literal(const std::string& input, int& pos) {
 }
 
 static Token read_next_token(const std::string& input, int& pos) {
-	char c = input[pos];
+	char ch = input[pos];
 
-	if (isalpha(c) || c == '_')
+	if (isalpha(ch) || ch == '_')
 		return consume_identifier(input, pos);
 	
-	if (isdigit(c))
+	if (isdigit(ch))
 		return consume_number(input, pos);
 
-	if (isblank(c)) {
+	if (isblank(ch)) {
 		// whitespace
 	}
 
 	Token_Type type = Token_Type::Unknown;
 
-	switch (c) {
+	char next = input[pos + 1];
+
+	switch (ch) {
 	//case '\t': return consume_indentation(input, pos);
 	case '"': return consume_string_literal(input, pos);
 	//case '\n': type = Token_Type::New_Line; break;
 	case '=':
-		if (input[pos + 1] == '=') {
+		if (next == '=') {
 			pos++;
 			type = Token_Type::Equals;
 		} else {
@@ -162,7 +164,7 @@ static Token read_next_token(const std::string& input, int& pos) {
 		}
 		break;
 	case '>':
-		if (input[pos + 1] == '=') {
+		if (next == '=') {
 			pos++;
 			type = Token_Type::Greater_Than_Equals;
 		} else {
@@ -170,7 +172,7 @@ static Token read_next_token(const std::string& input, int& pos) {
 		}
 		break;
 	case '<':
-		if (input[pos + 1] == '=') {
+		if (next == '=') {
 			pos++;
 			type = Token_Type::Less_Than_Equals;
 		} else {
@@ -178,23 +180,29 @@ static Token read_next_token(const std::string& input, int& pos) {
 		}
 		break;
 	case '+':
-		if (input[pos + 1] == '=') {
+		if (next == '=') {
 			pos++;
 			type = Token_Type::Plus_Equals;
+		} else if (next == '+') {
+			pos++;
+			type = Token_Type::Increment;
 		} else {
 			type = Token_Type::Plus;
 		}
 		break;
 	case '-':
-		if (input[pos + 1] == '=') {
+		if (next == '=') {
 			pos++;
 			type = Token_Type::Minus_Equals;
+		} else if (next == '-') {
+			pos++;
+			type = Token_Type::Decrement;
 		} else {
 			type = Token_Type::Minus;
 		}
 		break;
 	case '*':
-		if (input[pos + 1] == '=') {
+		if (next == '=') {
 			pos++;
 			type = Token_Type::Multiply_Equals;
 		} else {
@@ -202,7 +210,7 @@ static Token read_next_token(const std::string& input, int& pos) {
 		}
 		break;
 	case '/':
-		if (input[pos + 1] == '=') {
+		if (next == '=') {
 			pos++;
 			type = Token_Type::Divide_Equals;
 		} else {
@@ -219,7 +227,7 @@ static Token read_next_token(const std::string& input, int& pos) {
 	case ';': type = Token_Type::Semicolon; break;
 	case '.': type = Token_Type::Dot; break;
 	case '!':
-		if (input[pos + 1] == '=') {
+		if (next == '=') {
 			pos++;
 			type = Token_Type::Not_Equals; break;
 		} else {
@@ -245,6 +253,14 @@ std::vector<Token> Lexer::lex(const std::string& input) {
 					pos += 2;
 					break;
 				}
+				pos++;
+			}
+		}
+
+		// single line comment
+		if (input[pos] == '/' && input[pos + 1] == '/') {
+			pos += 2;
+			while (pos <= input.length() && input[pos] != '\n') {
 				pos++;
 			}
 		}

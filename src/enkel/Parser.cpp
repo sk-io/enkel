@@ -31,7 +31,7 @@ std::unique_ptr<AST_Node> Parser::parse_statement() {
     }
 
     if (peek().type == Token_Type::Keyword_Func) {
-        return parse_func_decl();
+        return parse_func_decl(true);
     }
 
     if (peek().type == Token_Type::Keyword_Class) {
@@ -120,6 +120,7 @@ std::unique_ptr<AST_Node> Parser::parse_expression() {
     return parse_infix(0);
 }
 
+// TODO: mixed infix and unary ops
 // https://eli.thegreenplace.net/2012/08/02/parsing-expressions-by-precedence-climbing
 std::unique_ptr<AST_Node> Parser::parse_infix(int min_prec) {
     std::unique_ptr<AST_Node> result = parse_postfix();
@@ -141,7 +142,7 @@ std::unique_ptr<AST_Node> Parser::parse_infix(int min_prec) {
             next_min_prec++;
         }
 
-        eat(token.type);
+        eat();
 
         std::unique_ptr<AST_Node> rhs = parse_infix(next_min_prec);
         std::unique_ptr<AST_Node> new_result = std::make_unique<AST_Bin_Op>(std::move(result), std::move(rhs), op);
@@ -152,11 +153,11 @@ std::unique_ptr<AST_Node> Parser::parse_infix(int min_prec) {
 }
 
 std::unique_ptr<AST_Node> Parser::parse_postfix() {
-    auto result = parse_primary(); // apsldoiasjdhuasd
+    auto result = parse_primary();
 
     while (true) {
-        // function call
         if (peek().type == Token_Type::Open_Parenthesis) {
+            // function call
             auto func_call = std::make_unique<AST_Func_Call>(std::move(result));
 
             eat(Token_Type::Open_Parenthesis);
@@ -174,11 +175,18 @@ std::unique_ptr<AST_Node> Parser::parse_postfix() {
 
             result = std::move(func_call);
         } else if (peek().type == Token_Type::Open_Bracket) {
+            // array/table subscript
             eat(Token_Type::Open_Bracket);
             auto subscript = parse_expression();
             eat(Token_Type::Closed_Bracket);
 
             auto node = std::make_unique<AST_Subscript>(std::move(result), std::move(subscript));
+            result = std::move(node);
+        } else if (peek().type == Token_Type::Increment || peek().type == Token_Type::Decrement) {
+            // ++ or --
+            Unary_Op op = eat().type == Token_Type::Increment ? Unary_Op::Increment : Unary_Op::Decrement;
+
+            auto node = std::make_unique<AST_Unary_Op>(std::move(result), op);
             result = std::move(node);
         } else {
             break;
@@ -294,10 +302,12 @@ std::unique_ptr<AST_Node> Parser::parse_var_decl() {
     return std::make_unique<AST_Var_Decl>(name, std::move(init));
 }
 
-std::unique_ptr<AST_Node> Parser::parse_func_decl() {
+std::unique_ptr<AST_Node> Parser::parse_func_decl(bool is_global) {
     eat(Token_Type::Keyword_Func);
+
     std::string name = eat(Token_Type::Identifier).str;
-    auto func_decl = std::make_unique<AST_Func_Decl>(name, nullptr);
+    auto func_decl = std::make_unique<AST_Func_Decl>(name, nullptr, is_global);
+
     eat(Token_Type::Open_Parenthesis);
     if (peek().type != Token_Type::Closed_Parenthesis) {
         while (true) {
@@ -339,7 +349,7 @@ std::unique_ptr<AST_Node> Parser::parse_class_decl() {
             class_decl->members.push_back(parse_var_decl());
             break;
         case Token_Type::Keyword_Func:
-            class_decl->members.push_back(parse_func_decl());
+            class_decl->members.push_back(parse_func_decl(false));
             break;
         default:
             assert(false);

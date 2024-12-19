@@ -57,6 +57,8 @@ enum class Token_Type {
     Minus_Equals,
     Multiply_Equals,
     Divide_Equals,
+    Increment,
+    Decrement,
     New_Line,
     End_Of_File,
 };

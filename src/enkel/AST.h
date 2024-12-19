@@ -2,7 +2,7 @@
 
 #include "Value.h"
 #include "Definition.h"
-#include "Bin_Op.h"
+#include "Operators.h"
 
 #include <vector>
 #include <memory>
@@ -11,6 +11,7 @@
 enum class AST_Node_Type {
 	Literal,
 	String_Literal,
+	Unary_Op,
 	Bin_Op,
 	Block,
 	Anon_Block,
@@ -53,6 +54,14 @@ struct AST_String_Literal : public AST_Node {
 		AST_Node(AST_Node_Type::String_Literal), str(_str) {}
 };
 
+struct AST_Unary_Op : public AST_Node {
+	std::unique_ptr<AST_Node> expr;
+	Unary_Op op;
+
+	AST_Unary_Op(std::unique_ptr<AST_Node> _expr, Unary_Op _op) :
+		AST_Node(AST_Node_Type::Unary_Op), expr(std::move(_expr)), op(_op) {}
+};
+
 struct AST_Bin_Op : public AST_Node {
 	std::unique_ptr<AST_Node> left;
 	std::unique_ptr<AST_Node> right;
@@ -90,10 +99,11 @@ struct AST_Func_Decl : public AST_Node {
 	std::string name;
 	std::unique_ptr<AST_Node> body;
 	std::vector<Definition> args;
+	bool is_global = false;
 	//std::string class_name; // TODO: uhhh
 
-	AST_Func_Decl(const std::string& _name, std::unique_ptr<AST_Node> _body) :
-		AST_Node(AST_Node_Type::Func_Decl), name(_name), body(std::move(_body)) {}
+	AST_Func_Decl(const std::string& _name, std::unique_ptr<AST_Node> _body, bool _is_global) :
+		AST_Node(AST_Node_Type::Func_Decl), name(_name), body(std::move(_body)), is_global(_is_global) {}
 };
 
 struct AST_Return : public AST_Node {

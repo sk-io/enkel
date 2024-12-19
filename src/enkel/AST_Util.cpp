@@ -18,6 +18,13 @@ void print_ast(AST_Node* node, int depth) {
 		std::cout << "AST_String_Literal: \"" << sub->str << "\"\n";
 		break;
 	}
+	case AST_Node_Type::Unary_Op: {
+		AST_Unary_Op* sub = (AST_Unary_Op*) node;
+		std::cout << "AST_Unary_Op\n";
+
+		print_ast(sub->expr.get(), depth + 1);
+		break;
+	}
 	case AST_Node_Type::Bin_Op: {
 		AST_Bin_Op* sub = (AST_Bin_Op*) node;
 		std::cout << "AST_Bin_Op: " << "\n";

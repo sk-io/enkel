@@ -1,6 +1,7 @@
 #include <enkel/Lexer.h>
 #include <enkel/Parser.h>
 #include <enkel/Interpreter.h>
+#include <enkel/AST_Util.h>
 #include <SDL2/SDL.h>
 #include <assert.h>
 #include <math.h>
@@ -30,7 +31,7 @@ static char* read_file(const char* path, uint64_t& size) {
 }
 
 static void register_funcs(Interpreter& interp) {
-	Extern_Func test_func = {"test", 2, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	interp.add_external_func({"test", 2, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
 		float x = args[0].as.num;
 		float y = args[1].as.num;
 
@@ -44,15 +45,11 @@ static void register_funcs(Interpreter& interp) {
 		SDL_RenderFillRect(renderer, &rect);
 
 		return {};
-	}};
+	}});
 
-	interp.add_external_func(test_func);
-
-	Extern_Func rand_func = {"rand", 0, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	interp.add_external_func({"rand", 0, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
 		return {Value::from_num(rand() / (float) RAND_MAX)};
-	}};
-
-	interp.add_external_func(rand_func);
+	}});
 }
 
 int main(int argc, char* argv[]) {
@@ -80,6 +77,8 @@ int main(int argc, char* argv[]) {
 
 	Parser parser(tokens);
 	auto root = parser.parse();
+
+	print_ast(root.get());
 
 	Interpreter interp;
 	register_funcs(interp);

@@ -4,6 +4,11 @@
 
 #include <assert.h>
 
+enum class Unary_Op {
+    Increment,
+    Decrement,
+};
+
 enum class Bin_Op {
     Not_A_Bin_Op,
     Add,
@@ -76,13 +81,15 @@ static constexpr int get_precedence(Bin_Op op) {
     case Bin_Op::Dot:
         return 7;
     }
+    
     assert(false);
     return -1;
 }
 
 static constexpr bool is_left_associative(Bin_Op op) {
     switch (op) {
-    case Bin_Op::Assign: return false;
+    case Bin_Op::Assign:
+        return false;
     }
     return true;
 }

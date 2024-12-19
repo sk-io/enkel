@@ -3,11 +3,9 @@
 #include <assert.h>
 #include <iostream>
 
-Interpreter::Interpreter() {
-	Extern_Func func_typeof;
-	func_typeof.name = "typeof";
-	func_typeof.num_args = 1;
-	func_typeof.callback = [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+Interpreter::Interpreter() : global_scope(nullptr, nullptr) {
+	// typeof(value)
+	add_external_func({"typeof", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
 		const Value& val = args[0];
 
 		std::string result;
@@ -46,27 +44,80 @@ Interpreter::Interpreter() {
 		}
 
 		return create_string(result);
-	};
-	add_external_func(func_typeof);
+	}});
 
-	Extern_Func func_run_gc;
-	func_run_gc.name = "_run_gc";
-	func_run_gc.callback = [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	// _run_gc()  [temporary]
+	add_external_func({"_run_gc", 0, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
 		// TODO: run from current scope???
 		heap.garbage_collect(global_scope);
 		return {};
-	};
-	add_external_func(func_run_gc);
+	}});
 
-	Extern_Func func_print;
-	func_print.name = "print";
-	func_print.num_args = 1;
-	func_print.callback = [](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	// print(value)
+	add_external_func({"print", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
 		std::cout << "print(): " << interp.val_to_str(args[0]) << "\n";
 		return {};
-	};
+	}});
 
-	add_external_func(func_print);
+	// min(value)
+	add_external_func({"min", 2, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		if (args[0].type != Value_Type::Num || args[1].type != Value_Type::Num) {
+			error("expected numbers");
+		}
+		return Value::from_num(std::min(args[0].as.num, args[1].as.num));
+	}});
+
+	// max(value)
+	add_external_func({"max", 2, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		if (args[0].type != Value_Type::Num || args[1].type != Value_Type::Num) {
+			error("expected numbers");
+		}
+		return Value::from_num(std::max(args[0].as.num, args[1].as.num));
+	}});
+
+	// floor(value)
+	add_external_func({"floor", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		if (args[0].type != Value_Type::Num) {
+			error("expected number argument");
+		}
+		
+		return Value::from_num(std::floor(args[0].as.num));
+	}});
+
+	// ceil(value)
+	add_external_func({"ceil", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		if (args[0].type != Value_Type::Num) {
+			error("expected number argument");
+		}
+
+		return Value::from_num(std::ceil(args[0].as.num));
+	}});
+
+	// lerp(a, b, ratio)
+	add_external_func({"lerp", 3, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		if (args[0].type != Value_Type::Num ||
+			args[1].type != Value_Type::Num ||
+			args[2].type != Value_Type::Num) {
+			error("expected 3 numbers");
+		}
+		float diff = args[1].as.num - args[0].as.num;
+
+		return Value::from_num(args[0].as.num + diff * args[2].as.num);
+	}});
+
+	// wrap(min, max, value)
+	// min is inclusive, max is exclusive
+	// returns value wrapped around [min, max]
+	// example: wrap(0, 10, -1) returns 9
+	add_external_func({"wrap", 3, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		if (args[0].type != Value_Type::Num ||
+			args[1].type != Value_Type::Num ||
+			args[2].type != Value_Type::Num) {
+			error("expected 3 numbers");
+		}
+
+		return Value::from_num(std::ceil(args[0].as.num));
+	}});
 }
 
 Eval_Result Interpreter::eval(AST_Node* node) {
@@ -139,9 +190,11 @@ Value Interpreter::call_function(Value func_ref, const std::vector<Value>& args,
 		error("incorrect number of arguments");
 	}
 
-	Scope func_scope;
-	func_scope.parent = (obj != nullptr) ? &obj->scope : &global_scope;
-	func_scope.this_obj = obj;
+	Scope func_scope((obj != nullptr) ? &obj->scope : &global_scope, obj);
+	if (func_decl->is_global) {
+		func_scope.parent = &global_scope;
+		func_scope.this_obj = nullptr;
+	}
 
 	// put evaluated args in callee scope
 	for (int i = 0; i < func_decl->args.size(); i++) {
@@ -162,6 +215,7 @@ Value Interpreter::create_string(const std::string& str) {
 	return val;
 }
 
+// a.b()
 // selected_obj is set for children evals calls when using dot operator
 Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance* selected_obj) {
 	switch (node->type) {
@@ -174,6 +228,34 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		AST_String_Literal* sub = (AST_String_Literal*) node;
 
 		return {create_string(sub->str)};
+	}
+	case AST_Node_Type::Unary_Op: {
+		AST_Unary_Op* sub = (AST_Unary_Op*) node;
+
+		Eval_Result expr_eval = eval_node(sub->expr.get(), scope);
+
+		if (expr_eval.ref == nullptr) {
+			error("expression is not modifiable");
+		}
+
+		if (expr_eval.ref->type != Value_Type::Num) {
+			error("expected number");
+		}
+
+		Value old_value = expr_eval.value;
+
+		switch (sub->op) {
+		case Unary_Op::Increment:
+			*expr_eval.ref = Value::from_num(expr_eval.ref->as.num + 1);
+			break;
+		case Unary_Op::Decrement:
+			*expr_eval.ref = Value::from_num(expr_eval.ref->as.num - 1);
+			break;
+		default:
+			error();
+		}
+
+		return {old_value};
 	}
 	case AST_Node_Type::Bin_Op: {
 		AST_Bin_Op* sub = (AST_Bin_Op*) node;
@@ -424,7 +506,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 			// if foo.bar, search the scope of foo
 			var = selected_obj->scope.find_def(sub->name, false);
 		} else {
-			// search global scope
+			// search current scope recursively
 			var = scope->find_def(sub->name);
 		}
 
@@ -474,8 +556,8 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		for (auto& arg : sub->args) {
 			arg_evals.push_back(eval_node(arg.get(), scope).value);
 		}
-
-		Value result = call_function(func_ref, arg_evals, selected_obj);
+		
+		Value result = call_function(func_ref, arg_evals, selected_obj != nullptr ? selected_obj : scope->this_obj);
 		return {result};
 	}
 	case AST_Node_Type::If: {
@@ -488,10 +570,10 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		}
 
 		if (cond_val.as._bool) {
-			Scope new_scope(scope);
+			Scope new_scope(scope, scope->this_obj);
 			return eval_node(sub->if_body.get(), &new_scope);
 		} else if (sub->else_body != nullptr) {
-			Scope new_scope(scope);
+			Scope new_scope(scope, scope->this_obj);
 			return eval_node(sub->else_body.get(), &new_scope);
 		}
 		
@@ -500,7 +582,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 	case AST_Node_Type::While: {
 		AST_While* sub = (AST_While*) node;
 
-		Scope new_scope(scope);
+		Scope new_scope(scope, scope->this_obj);
 		while (true) {
 			Value cond_val = eval_node(sub->condition.get(), scope).value;
 
@@ -526,7 +608,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 	case AST_Node_Type::For: {
 		AST_For* sub = (AST_For*) node;
 
-		Scope new_scope(scope);
+		Scope new_scope(scope, scope->this_obj);
 
 		Value expr_val = eval_node(sub->expr.get(), scope).value;
 
@@ -652,7 +734,8 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 
 		const Class_Decl& class_decl = class_decls[sub->name];
 
-		GC_Obj_Instance* instance = new GC_Obj_Instance(Scope(&global_scope));
+		// TODO: this_obj???
+		GC_Obj_Instance* instance = new GC_Obj_Instance(Scope(&global_scope, nullptr));
 		heap.add_obj(instance);
 
 		instance->class_name = sub->name;
@@ -722,7 +805,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		return {Value::null_value()};
 	}
 	default:
-		error();
+		error("unhandled node type");
 	}
 
 	return {};
