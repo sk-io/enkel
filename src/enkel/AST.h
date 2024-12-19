@@ -2,6 +2,7 @@
 
 #include "Value.h"
 #include "Definition.h"
+#include "Bin_Op.h"
 
 #include <vector>
 #include <memory>
@@ -49,22 +50,6 @@ struct AST_String_Literal : public AST_Node {
 
 	AST_String_Literal(const std::string& _str) :
 		AST_Node(AST_Node_Type::String_Literal), str(_str) {}
-};
-
-enum class Bin_Op {
-	Add,
-	Sub,
-	Mul,
-	Div,
-	Assign,
-	Equals,
-	Not_Equals,
-	Greater_Than,
-	Greater_Than_Equals,
-	Less_Than,
-	Less_Than_Equals,
-	Dot,
-	Is,
 };
 
 struct AST_Bin_Op : public AST_Node {

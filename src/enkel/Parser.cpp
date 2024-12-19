@@ -3,61 +3,6 @@
 #include <assert.h>
 #include <iostream>
 
-static constexpr Bin_Op get_bin_op(Token_Type type) {
-    switch (type) {
-    case Token_Type::Assignment: return Bin_Op::Assign;
-    case Token_Type::Plus: return Bin_Op::Add;
-    case Token_Type::Minus: return Bin_Op::Sub;
-    case Token_Type::Multiply: return Bin_Op::Mul;
-    case Token_Type::Divide: return Bin_Op::Div;
-    case Token_Type::Equals: return Bin_Op::Equals;
-    case Token_Type::Not_Equals: return Bin_Op::Not_Equals;
-    case Token_Type::Greater_Than: return Bin_Op::Greater_Than;
-    case Token_Type::Greater_Than_Equals: return Bin_Op::Greater_Than_Equals;
-    case Token_Type::Less_Than: return Bin_Op::Less_Than;
-    case Token_Type::Less_Than_Equals: return Bin_Op::Less_Than_Equals;
-    case Token_Type::Dot: return Bin_Op::Dot;
-    case Token_Type::Keyword_Is: return Bin_Op::Is;
-    }
-
-    assert(false);
-    return Bin_Op::Add;
-}
-
-static constexpr int get_precedence(Bin_Op op) {
-    switch (op) {
-    case Bin_Op::Assign:
-        return 1;
-    case Bin_Op::Equals:
-    case Bin_Op::Not_Equals:
-        return 2;
-    case Bin_Op::Greater_Than:
-    case Bin_Op::Greater_Than_Equals:
-    case Bin_Op::Less_Than:
-    case Bin_Op::Less_Than_Equals:
-        return 3;
-    case Bin_Op::Add:
-    case Bin_Op::Sub:
-        return 4;
-    case Bin_Op::Mul:
-    case Bin_Op::Div:
-        return 5;
-    case Bin_Op::Is:
-        return 6;
-    case Bin_Op::Dot:
-        return 7;
-    }
-    assert(false);
-    return -1;
-}
-
-static constexpr bool is_left_associative(Bin_Op op) {
-    switch (op) {
-    case Bin_Op::Assign: return false;
-    }
-    return true;
-}
-
 std::unique_ptr<AST_Node> Parser::parse() {
     std::unique_ptr<AST_Block> block = std::make_unique<AST_Block>();
 
@@ -172,10 +117,11 @@ std::unique_ptr<AST_Node> Parser::parse_infix(int min_prec) {
 
     while (true) {
         const Token& token = peek(0);
-        if (!Token::is_bin_op(token.type))
-            break;
 
         Bin_Op op = get_bin_op(token.type);
+        if (op == Bin_Op::Not_A_Bin_Op)
+            break;
+
         int prec = get_precedence(op);
 
         if (prec < min_prec)

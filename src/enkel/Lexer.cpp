@@ -152,28 +152,59 @@ static Token read_next_token(const std::string& input, int& pos) {
 	case '=':
 		if (input[pos + 1] == '=') {
 			pos++;
-			type = Token_Type::Equals; break;
+			type = Token_Type::Equals;
 		} else {
-			type = Token_Type::Assignment; break;
+			type = Token_Type::Assignment;
 		}
+		break;
 	case '>':
 		if (input[pos + 1] == '=') {
 			pos++;
-			type = Token_Type::Greater_Than_Equals; break;
+			type = Token_Type::Greater_Than_Equals;
 		} else {
-			type = Token_Type::Greater_Than; break;
+			type = Token_Type::Greater_Than;
 		}
+		break;
 	case '<':
 		if (input[pos + 1] == '=') {
 			pos++;
-			type = Token_Type::Less_Than_Equals; break;
+			type = Token_Type::Less_Than_Equals;
 		} else {
-			type = Token_Type::Less_Than; break;
+			type = Token_Type::Less_Than;
 		}
-	case '+': type = Token_Type::Plus; break;
-	case '-': type = Token_Type::Minus; break;
-	case '*': type = Token_Type::Multiply; break;
-	case '/': type = Token_Type::Divide; break;
+		break;
+	case '+':
+		if (input[pos + 1] == '=') {
+			pos++;
+			type = Token_Type::Plus_Equals;
+		} else {
+			type = Token_Type::Plus;
+		}
+		break;
+	case '-':
+		if (input[pos + 1] == '=') {
+			pos++;
+			type = Token_Type::Minus_Equals;
+		} else {
+			type = Token_Type::Minus;
+		}
+		break;
+	case '*':
+		if (input[pos + 1] == '=') {
+			pos++;
+			type = Token_Type::Multiply_Equals;
+		} else {
+			type = Token_Type::Multiply;
+		}
+		break;
+	case '/':
+		if (input[pos + 1] == '=') {
+			pos++;
+			type = Token_Type::Divide_Equals;
+		} else {
+			type = Token_Type::Divide;
+		}
+		break;
 	case '(': type = Token_Type::Open_Parenthesis; break;
 	case ')': type = Token_Type::Closed_Parenthesis; break;
 	case ',': type = Token_Type::Comma; break;

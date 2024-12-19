@@ -51,6 +51,10 @@ enum class Token_Type {
     Open_Curly,
     Closed_Curly,
     Dot,
+    Plus_Equals,
+    Minus_Equals,
+    Multiply_Equals,
+    Divide_Equals,
     New_Line,
     End_Of_File,
 };
@@ -59,24 +63,4 @@ struct Token {
 	Token_Type type;
     Value value;
     std::string str;
-
-    static constexpr bool is_bin_op(Token_Type type) {
-        switch (type) {
-        case Token_Type::Assignment:
-        case Token_Type::Plus:
-        case Token_Type::Minus:
-        case Token_Type::Multiply:
-        case Token_Type::Divide:
-        case Token_Type::Equals:
-        case Token_Type::Not_Equals:
-        case Token_Type::Greater_Than:
-        case Token_Type::Greater_Than_Equals:
-        case Token_Type::Less_Than:
-        case Token_Type::Less_Than_Equals:
-        case Token_Type::Dot:
-        case Token_Type::Keyword_Is:
-            return true;
-        }
-        return false;
-    }
 };

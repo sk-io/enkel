@@ -283,8 +283,11 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 			return {Value::from_bool(inst->class_name == compare->name)};
 		}
 
-		Value lval = eval_node(sub->left.get(), scope).value;
-		Value rval = eval_node(sub->right.get(), scope).value;
+		Eval_Result l_eval = eval_node(sub->left.get(), scope);
+		Eval_Result r_eval = eval_node(sub->right.get(), scope);
+
+		Value lval = l_eval.value;
+		Value rval = r_eval.value;
 
 		if (lval.type == Value_Type::Num && rval.type == Value_Type::Num) {
 			Value val;
@@ -318,6 +321,22 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 				break;
 			case Bin_Op::Less_Than_Equals:
 				val = Value::from_bool(lval.as.num <= rval.as.num);
+				break;
+			case Bin_Op::Add_Assign:
+				val = Value::from_num(lval.as.num + rval.as.num);
+				*l_eval.ref = val;
+				break;
+			case Bin_Op::Sub_Assign:
+				val = Value::from_num(lval.as.num - rval.as.num);
+				*l_eval.ref = val;
+				break;
+			case Bin_Op::Mul_Assign:
+				val = Value::from_num(lval.as.num * rval.as.num);
+				*l_eval.ref = val;
+				break;
+			case Bin_Op::Div_Assign:
+				val = Value::from_num(lval.as.num / rval.as.num);
+				*l_eval.ref = val;
 				break;
 			default:
 				error();
@@ -376,7 +395,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 	case AST_Node_Type::Var_Decl: {
 		AST_Var_Decl* sub = (AST_Var_Decl*) node;
 		if (scope->find_def(sub->name) != nullptr) {
-			error("duplicate variable name");
+			error("duplicate definition name: " + sub->name);
 		}
 
 		Value val = Value::null_value();
@@ -412,7 +431,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 	case AST_Node_Type::Func_Decl: {
 		AST_Func_Decl* sub = (AST_Func_Decl*) node;
 		if (scope->find_def(sub->name) != nullptr) {
-			error("duplicate variable name");
+			error("duplicate definition name: " + sub->name);
 		}
 
 		Value val;
