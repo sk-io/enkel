@@ -374,7 +374,11 @@ const Token& Parser::eat(Token_Type expected) {
 }
 
 void Parser::error(const std::string& msg) const {
-    std::cout << "Parser error: " << msg << "\n";
-    assert(false);
-    exit(1);
+    if (error_callback != nullptr) {
+        error_callback(msg);
+    } else {
+        std::cout << "Parser error: " << msg << "\n";
+        assert(false);
+        exit(1);
+    }
 }

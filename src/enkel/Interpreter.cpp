@@ -3,7 +3,8 @@
 #include <assert.h>
 #include <iostream>
 
-Interpreter::Interpreter() : global_scope(nullptr, nullptr) {
+Interpreter::Interpreter(Error_Callback_Func _error_callback) :
+	global_scope(nullptr, nullptr), error_callback(_error_callback) {
 	// typeof(value)
 	add_external_func({"typeof", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
 		const Value& val = args[0];
@@ -55,7 +56,7 @@ Interpreter::Interpreter() : global_scope(nullptr, nullptr) {
 
 	// print(value)
 	add_external_func({"print", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
-		std::cout << "print(): " << interp.val_to_str(args[0]) << "\n";
+		std::cout << "print(): " << interp.get_string(args[0]) << "\n";
 		return {};
 	}});
 
@@ -136,7 +137,7 @@ void Interpreter::add_external_func(const Extern_Func& func) {
 	global_scope.set_def(func.name, val);
 }
 
-std::string Interpreter::val_to_str(const Value& val) const {
+std::string Interpreter::get_string(const Value& val) const {
 	switch (val.type) {
 	case Value_Type::Null: return "null";
 	case Value_Type::Num: return std::to_string(val.as.num);
@@ -154,7 +155,7 @@ std::string Interpreter::val_to_str(const Value& val) const {
 			for (size_t i = 0; i < arr->arr.size(); i++) {
 				const Value& item = arr->arr[i];
 
-				str += val_to_str(item);
+				str += get_string(item);
 				if (i != arr->arr.size() - 1)
 					str += ", ";
 			}
@@ -178,8 +179,8 @@ Value Interpreter::call_function(Value func_ref, const std::vector<Value>& args,
 	// check if it's an external c++ function
 	if (func_ref.type == Value_Type::Extern_Func) {
 		const Extern_Func& func = external_funcs[func_ref.as.i];
-		if (args.size() != func.num_args) {
-			error("incorrect number of arguments");
+		if (args.size() < func.min_args) {
+			error("too few arguments");
 		}
 
 		return func.callback(*this, args);
@@ -812,7 +813,11 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 }
 
 void Interpreter::error(const std::string& msg) const {
-	std::cout << "Interpreter error: " << msg << "\n";
-	assert(false);
-	exit(1);
+	if (error_callback != nullptr) {
+		error_callback(msg);
+	} else {
+		std::cout << "Interpreter error: " << msg << "\n";
+		assert(false);
+		exit(1);
+	}
 }

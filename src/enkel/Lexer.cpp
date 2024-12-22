@@ -6,7 +6,7 @@ static Token consume_identifier(const std::string& input, int& pos) {
 	while (pos + 1 < input.length()) {
 		char next = input[pos + 1];
 
-		if (!isalnum(next) && next != '_' && next != '-')
+		if (!isalnum(next) && next != '_')
 			break;
 
 		pos++;

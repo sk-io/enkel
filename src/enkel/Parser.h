@@ -5,11 +5,15 @@
 
 #include <memory>
 #include <vector>
+#include <functional>
 
 class Parser {
 public:
+	using Error_Callback_Func = std::function<void(const std::string& msg)>;
+
 	Parser(std::vector<Token>&&) = delete;
-	Parser(const std::vector<Token>& _tokens) : tokens(_tokens) {}
+	Parser(const std::vector<Token>& _tokens, Error_Callback_Func _error_callback = nullptr) : 
+		tokens(_tokens), error_callback(_error_callback) {}
 
 	std::unique_ptr<AST_Node> parse();
 	std::unique_ptr<AST_Node> parse_block();
@@ -31,4 +35,5 @@ private:
 
 	int pos = 0;
 	const std::vector<Token>& tokens;
+	Error_Callback_Func error_callback;
 };
