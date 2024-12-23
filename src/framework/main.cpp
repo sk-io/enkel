@@ -8,18 +8,9 @@
 #include <iostream>
 #include <stdlib.h>
 
-SDL_Window* window;
-SDL_Renderer* renderer;
+#include "framework.h"
 
-struct {
-	int width = 800, height = 600;
-	int scale = 1;
-	std::string title = "enkel framework";
-} config;
-
-struct {
-	uint32_t color = 0xFF00FF;
-} draw_state;
+Framework framework{};
 
 static char* read_file(const char* path, uint64_t& size) {
 	size = 0;
@@ -52,8 +43,8 @@ static void register_funcs(Interpreter& interp) {
 		rect.w = 16;
 		rect.h = 16;
 
-		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-		SDL_RenderFillRect(renderer, &rect);
+		SDL_SetRenderDrawColor(framework.renderer, 255, 0, 0, 255);
+		SDL_RenderFillRect(framework.renderer, &rect);
 
 		return {};
 	}});
@@ -66,8 +57,8 @@ static void register_funcs(Interpreter& interp) {
 		int width = args[0].as.num;
 		int height = args[1].as.num;
 
-		config.width = width;
-		config.height = height;
+		framework.width = width;
+		framework.height = height;
 
 		interp.get_global_scope().set_def("width", Value::from_num(width));
 		interp.get_global_scope().set_def("height", Value::from_num(height));
@@ -92,7 +83,7 @@ static void register_funcs(Interpreter& interp) {
 		int g = i >> 8 & 0xFF;
 		int b = i & 0xFF;
 
-		SDL_SetRenderDrawColor(renderer, r, g, b, 255);
+		SDL_SetRenderDrawColor(framework.renderer, r, g, b, 255);
 		return {};
 	}});
 
@@ -104,12 +95,12 @@ static void register_funcs(Interpreter& interp) {
 
 		const SDL_Rect rect = {x, y, w, h};
 
-		SDL_RenderFillRect(renderer, &rect);
+		SDL_RenderFillRect(framework.renderer, &rect);
 		return {};
 	}});
 
 	interp.add_external_func({"set_title", 1, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
-		config.title = interp.get_string(args[0]);
+		framework.title = interp.get_string(args[0]);
 		return {};
 	}});
 }
@@ -117,7 +108,7 @@ static void register_funcs(Interpreter& interp) {
 static void error(const std::string& msg = "") {
 	std::cout << "Error: " << msg.c_str() << std::endl;
 	assert(false);
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error!", msg.c_str(), window);
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error!", msg.c_str(), framework.window);
 	exit(1);
 }
 
@@ -126,15 +117,15 @@ static void init_sdl() {
 		error("failed to initialize SDL2");
 	}
 
-	window = SDL_CreateWindow(config.title.c_str(),
+	framework.window = SDL_CreateWindow(framework.title.c_str(),
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-		config.width, config.height, 0);
-	if (!window) {
+		framework.width, framework.height, 0);
+	if (!framework.window) {
 		error("failed to create SDL2 window");
 	}
 
-	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-	if (!renderer) {
+	framework.renderer = SDL_CreateRenderer(framework.window, -1, SDL_RENDERER_ACCELERATED);
+	if (!framework.renderer) {
 		error("failed to create SDL2 renderer");
 	}
 }
@@ -156,8 +147,8 @@ int main(int argc, char* argv[]) {
 
 	interp.eval(root.get());
 
-	interp.get_global_scope().set_def("width", Value::from_num(config.width));
-	interp.get_global_scope().set_def("height", Value::from_num(config.height));
+	interp.get_global_scope().set_def("width", Value::from_num(framework.width));
+	interp.get_global_scope().set_def("height", Value::from_num(framework.height));
 
 	interp.get_global_scope().set_def("mouse_x", Value::from_num(0));
 	interp.get_global_scope().set_def("mouse_y", Value::from_num(0));
@@ -189,12 +180,12 @@ int main(int argc, char* argv[]) {
 
 		interp.call_function(update_func, {});
 
-		SDL_SetRenderDrawColor(renderer, 100, 100, 255, 255);
-		SDL_RenderClear(renderer);
+		SDL_SetRenderDrawColor(framework.renderer, 100, 100, 255, 255);
+		SDL_RenderClear(framework.renderer);
 
 		interp.call_function(draw_func, {});
 
-		SDL_RenderPresent(renderer);
+		SDL_RenderPresent(framework.renderer);
 		//SDL_Delay(1);
 
 		const int FRAMES = 100;

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Value.h"
-#include "Definition.h"
+#include "value.h"
+#include "definition.h"
 
 #include <unordered_map>
 #include <string>

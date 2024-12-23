@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Scope.h"
-#include "Definition.h"
+#include "scope.h"
+#include "definition.h"
 
 #include <vector>
 #include <memory>

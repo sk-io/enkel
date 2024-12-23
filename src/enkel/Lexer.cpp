@@ -1,4 +1,4 @@
-#include "Lexer.h"
+#include "lexer.h"
 
 static Token consume_identifier(const std::string& input, int& pos) {
 	int start = pos;

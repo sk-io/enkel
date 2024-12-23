@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Value.h"
-#include "Definition.h"
-#include "Operators.h"
+#include "value.h"
+#include "definition.h"
+#include "operators.h"
 
 #include <vector>
 #include <memory>

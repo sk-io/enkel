@@ -1,4 +1,4 @@
-#include "Scope.h"
+#include "scope.h"
 
 Definition* Scope::find_def(const std::string& name, bool recursive) {
     if (definitions.find(name) != definitions.end()) {

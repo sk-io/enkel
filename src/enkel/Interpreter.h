@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Value.h"
-#include "AST.h"
-#include "Scope.h"
-#include "Definition.h"
-#include "GC.h"
+#include "value.h"
+#include "ast.h"
+#include "scope.h"
+#include "definition.h"
+#include "gc.h"
 
 #include <functional>
 #include <vector>

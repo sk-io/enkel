@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Token.h"
+#include "token.h"
 
 #include <assert.h>
 

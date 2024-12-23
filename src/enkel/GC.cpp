@@ -1,4 +1,4 @@
-#include "GC.h"
+#include "gc.h"
 
 #include <assert.h>
 
