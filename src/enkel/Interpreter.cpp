@@ -331,6 +331,27 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 					arr->arr.pop_back();
 					return {val};
 				}
+
+				if (var->name == "remove_at") {
+					if (fcall->args.size() != 1) {
+						error("incorrect number of args");
+					}
+
+					Value index_val = eval_node(fcall->args[0].get(), scope).value;
+					if (index_val.type != Value_Type::Num) {
+						error("expected integer index");
+					}
+
+					int index = (int) index_val.as.num;
+					if (index < 0 || index >= arr->arr.size()) {
+						error("index is out of bounds");
+					}
+
+					Value removed_val = arr->arr[index];
+					arr->arr.erase(arr->arr.begin() + index);
+
+					return {removed_val};
+				}
 			}
 
 			if (gc_obj->type != GC_Obj_Type::Instance) {

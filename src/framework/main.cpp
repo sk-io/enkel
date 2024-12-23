@@ -159,6 +159,9 @@ int main(int argc, char* argv[]) {
 	interp.get_global_scope().set_def("width", Value::from_num(config.width));
 	interp.get_global_scope().set_def("height", Value::from_num(config.height));
 
+	interp.get_global_scope().set_def("mouse_x", Value::from_num(0));
+	interp.get_global_scope().set_def("mouse_y", Value::from_num(0));
+
 	Value init_func = interp.get_global_scope().find_def("init")->value;
 	Value update_func = interp.get_global_scope().find_def("update")->value;
 	Value draw_func = interp.get_global_scope().find_def("draw")->value;
@@ -176,6 +179,10 @@ int main(int argc, char* argv[]) {
 			switch (event.type) {
 			case SDL_QUIT:
 				running = false;
+				break;
+			case SDL_MOUSEMOTION:
+				interp.get_global_scope().set_def("mouse_x", Value::from_num(event.motion.x));
+				interp.get_global_scope().set_def("mouse_y", Value::from_num(event.motion.y));
 				break;
 			}
 		}

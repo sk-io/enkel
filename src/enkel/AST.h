@@ -73,10 +73,9 @@ struct AST_Bin_Op : public AST_Node {
 
 struct AST_Block : public AST_Node {
 	std::vector<std::unique_ptr<AST_Node>> statements;
-	bool create_scope;
 
-	AST_Block(bool _create_scope = false) :
-		AST_Node(AST_Node_Type::Block), create_scope(_create_scope) {}
+	AST_Block() :
+		AST_Node(AST_Node_Type::Block) {}
 };
 
 struct AST_Var_Decl : public AST_Node {
