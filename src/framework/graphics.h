@@ -15,6 +15,6 @@ public:
 	void fill_rect(float x, float y, float w, float h);
 	void draw_img(const Image& img, float x, float y, float w, float h);
 private:
-	uint32_t color;
+	uint32_t color = 0;
 };
 

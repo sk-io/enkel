@@ -10,6 +10,7 @@
 #include <string>
 #include <stdint.h>
 #include <vector>
+#include <unordered_map>
 
 struct Framework {
 	SDL_Window* window;
@@ -25,9 +26,11 @@ struct Framework {
 	Value draw_func;
 
 	std::vector<Image> images;
+	std::unordered_map<int32_t, bool> keyboard_state;
 };
 
 extern Framework fw;
 
 void run_framework();
 void framework_error(const std::string& msg = "");
+bool is_key_down(SDL_Keycode keycode);
