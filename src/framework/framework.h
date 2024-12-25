@@ -18,6 +18,7 @@ struct Framework {
 
 	int width = 800, height = 600;
 	int scale = 1;
+	float framerate = 60; // <= 0 means uncapped
 	std::string title = "enkel framework";
 
 	Interpreter interp;

@@ -10,6 +10,7 @@
 #include <math.h>
 #include <iostream>
 #include <stdlib.h>
+#include <chrono>
 
 #include "framework.h"
 #include "graphics.h"
@@ -133,6 +134,12 @@ static void register_funcs() {
 	fw.interp.add_external_func({"rand", 0, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
 		return {Value::from_num(rand() / (float) RAND_MAX)};
 	}});
+
+	fw.interp.add_external_func({"set_framerate", 1, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		float fps = args[0].as.num;
+		fw.framerate = fps;
+		return {};
+	}});
 }
 
 void framework_error(const std::string& msg) {
@@ -194,21 +201,36 @@ static void init() {
 	fw.interp.get_global_scope().set_def("mouse_x", Value::from_num(0));
 	fw.interp.get_global_scope().set_def("mouse_y", Value::from_num(0));
 
-	fw.init_func = fw.interp.get_global_scope().find_def("init")->value;
-	fw.update_func = fw.interp.get_global_scope().find_def("update")->value;
-	fw.draw_func = fw.interp.get_global_scope().find_def("draw")->value;
+	fw.interp.get_global_scope().set_def("delta_time", Value::from_num(0));
 
-	fw.interp.call_function(fw.init_func, {});
+	auto try_get_func = [] (const std::string& name) -> Value {
+		Definition* def = fw.interp.get_global_scope().find_def(name);
+		if (def == nullptr)
+			return {};
+		return def->value;
+	};
+
+	fw.init_func = try_get_func("init");
+	fw.update_func = try_get_func("update");
+	fw.draw_func = try_get_func("draw");
+
+	if (fw.init_func.type != Value_Type::Null)
+		fw.interp.call_function(fw.init_func, {});
 
 	SDL_ShowWindow(fw.window);
 }
 
 void run_framework() {
+	using namespace std::chrono;
+
 	init();
 
 	int prev_ticks = SDL_GetTicks();
 	int frame_count = 0;
 	bool running = true;
+
+	auto prev_frame_time = high_resolution_clock::now();
+
 	while (running) {
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
@@ -234,23 +256,37 @@ void run_framework() {
 				break;
 			}
 		}
-		SDL_GetKeyboardState(NULL);
-		fw.interp.call_function(fw.update_func, {});
 
-		fw.interp.call_function(fw.draw_func, {});
+		auto now = high_resolution_clock::now();
+		auto nanos_since_last = duration_cast<nanoseconds>(now - prev_frame_time).count();
+		double seconds_since_last = nanos_since_last / 1000000000.0;
 
-		gfx.swap_buffers();
+		if (fw.framerate <= 0 || seconds_since_last >= 1 / fw.framerate) {
+			prev_frame_time = high_resolution_clock::now() - milliseconds(1);
 
-		const int FRAMES = 100;
-		if (frame_count++ >= FRAMES) {
-			int ticks = SDL_GetTicks() - prev_ticks;
+			fw.interp.get_global_scope().set_def("delta_time", Value::from_num(seconds_since_last));
 
-			float ms = ticks / (float) FRAMES;
+			if (fw.update_func.type != Value_Type::Null)
+				fw.interp.call_function(fw.update_func, {});
 
-			std::cout << ms << " ms, " << 1000 / ms << " fps" << std::endl;
-			frame_count = 0;
-			prev_ticks = SDL_GetTicks();
+			if (fw.draw_func.type != Value_Type::Null)
+				fw.interp.call_function(fw.draw_func, {});
+
+			gfx.swap_buffers();
+
+			const int FRAMES = 100;
+			if (frame_count++ >= FRAMES) {
+				int ticks = SDL_GetTicks() - prev_ticks;
+
+				float ms = ticks / (float) FRAMES;
+
+				std::cout << ms << " ms, " << 1000 / ms << " fps" << std::endl;
+				frame_count = 0;
+				prev_ticks = SDL_GetTicks();
+			}
 		}
+
+		SDL_Delay(1);
 	}
 
 	SDL_Quit();

@@ -286,7 +286,7 @@ std::unique_ptr<AST_Node> Parser::parse_primary() {
     }
 
     const Token& token = peek();
-    assert(false);
+    error("unexpected token");
     return nullptr;
 }
 
