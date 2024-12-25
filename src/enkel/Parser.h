@@ -12,8 +12,7 @@ public:
 	using Error_Callback_Func = std::function<void(const std::string& msg)>;
 
 	Parser(std::vector<Token>&&) = delete;
-	Parser(const std::vector<Token>& _tokens, Error_Callback_Func _error_callback = nullptr) : 
-		tokens(_tokens), error_callback(_error_callback) {}
+	Parser(const std::vector<Token>& _tokens) : tokens(_tokens) {}
 
 	std::unique_ptr<AST_Node> parse();
 	std::unique_ptr<AST_Node> parse_block();
@@ -26,6 +25,8 @@ public:
 	std::unique_ptr<AST_Node> parse_var_decl();
 	std::unique_ptr<AST_Node> parse_func_decl(bool is_global);
 	std::unique_ptr<AST_Node> parse_class_decl();
+
+	void set_error_callback(Error_Callback_Func _func) { error_callback = _func; }
 
 private:
 	const Token& peek(int offset = 0);

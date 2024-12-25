@@ -3,8 +3,8 @@
 #include <assert.h>
 #include <iostream>
 
-Interpreter::Interpreter(Error_Callback_Func _error_callback) :
-	global_scope(nullptr, nullptr), error_callback(_error_callback) {
+Interpreter::Interpreter() :
+	global_scope(nullptr, nullptr) {
 	// typeof(value)
 	add_external_func({"typeof", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
 		const Value& val = args[0];
