@@ -16,4 +16,6 @@ Image::Image(const std::string& path) {
 	if (tex == NULL) {
 		framework_error("failed to convert surface to texture: " + path);
 	}
+
+	SDL_FreeSurface(surf);
 }

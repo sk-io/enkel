@@ -356,7 +356,7 @@ std::unique_ptr<AST_Node> Parser::parse_class_decl() {
             class_decl->members.push_back(parse_func_decl(false));
             break;
         default:
-            assert(false);
+            error();
         }
     }
     eat(Token_Type::Closed_Curly);

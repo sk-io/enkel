@@ -132,7 +132,7 @@ static void register_funcs() {
 
 	// --- utils ---
 	fw.interp.add_external_func({"rand", 0, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
-		return {Value::from_num(rand() / (float) RAND_MAX)};
+		return {Value::from_num(rand() / (float) (RAND_MAX + 1))};
 	}});
 
 	fw.interp.add_external_func({"set_framerate", 1, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
@@ -144,8 +144,8 @@ static void register_funcs() {
 
 void framework_error(const std::string& msg) {
 	std::cout << "Error: " << msg.c_str() << std::endl;
-	assert(false);
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error!", msg.c_str(), fw.window);
+	assert(false);
 	exit(1);
 }
 
@@ -175,11 +175,11 @@ static void init_sdl() {
 	gfx.init();
 }
 
-static void init() {
+static void init(const std::string& script_path) {
 	init_sdl();
 
 	uint64_t siz;
-	char* buf = read_file("input.en", siz);
+	char* buf = read_file(script_path.c_str(), siz);
 
 	auto tokens = Lexer::lex(buf);
 	free(buf);
@@ -220,10 +220,10 @@ static void init() {
 	SDL_ShowWindow(fw.window);
 }
 
-void run_framework() {
+void run_framework(const std::string& script_path) {
 	using namespace std::chrono;
 
-	init();
+	init(script_path);
 
 	int prev_ticks = SDL_GetTicks();
 	int frame_count = 0;
