@@ -19,6 +19,7 @@ public:
 	std::unique_ptr<AST_Node> parse_statement();
 	std::unique_ptr<AST_Node> parse_expression();
 	std::unique_ptr<AST_Node> parse_infix(int min_prec);
+	std::unique_ptr<AST_Node> parse_prefix();
 	std::unique_ptr<AST_Node> parse_postfix();
 	std::unique_ptr<AST_Node> parse_primary();
 

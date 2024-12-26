@@ -7,6 +7,7 @@
 enum class Unary_Op {
     Increment,
     Decrement,
+    Not,
 };
 
 enum class Bin_Op {
@@ -28,6 +29,8 @@ enum class Bin_Op {
     Sub_Assign,
     Mul_Assign,
     Div_Assign,
+    And,
+    Or,
 };
 
 static constexpr Bin_Op get_bin_op(Token_Type type) {
@@ -49,6 +52,8 @@ static constexpr Bin_Op get_bin_op(Token_Type type) {
     case Token_Type::Minus_Equals: return Bin_Op::Sub_Assign;
     case Token_Type::Multiply_Equals: return Bin_Op::Mul_Assign;
     case Token_Type::Divide_Equals: return Bin_Op::Div_Assign;
+    case Token_Type::Keyword_And: return Bin_Op::And;
+    case Token_Type::Keyword_Or: return Bin_Op::Or;
     }
 
     return Bin_Op::Not_A_Bin_Op;
@@ -62,24 +67,28 @@ static constexpr int get_precedence(Bin_Op op) {
     case Bin_Op::Mul_Assign:
     case Bin_Op::Div_Assign:
         return 1;
+    case Bin_Op::Or:
+        return 2;
+    case Bin_Op::And:
+        return 3;
     case Bin_Op::Equals:
     case Bin_Op::Not_Equals:
-        return 2;
+        return 4;
     case Bin_Op::Greater_Than:
     case Bin_Op::Greater_Than_Equals:
     case Bin_Op::Less_Than:
     case Bin_Op::Less_Than_Equals:
-        return 3;
+        return 5;
     case Bin_Op::Add:
     case Bin_Op::Sub:
-        return 4;
+        return 6;
     case Bin_Op::Mul:
     case Bin_Op::Div:
-        return 5;
-    case Bin_Op::Is:
-        return 6;
-    case Bin_Op::Dot:
         return 7;
+    case Bin_Op::Is:
+        return 8;
+    case Bin_Op::Dot:
+        return 9;
     }
     
     assert(false);
@@ -89,6 +98,10 @@ static constexpr int get_precedence(Bin_Op op) {
 static constexpr bool is_left_associative(Bin_Op op) {
     switch (op) {
     case Bin_Op::Assign:
+    case Bin_Op::Add_Assign:
+    case Bin_Op::Sub_Assign:
+    case Bin_Op::Mul_Assign:
+    case Bin_Op::Div_Assign:
         return false;
     }
     return true;

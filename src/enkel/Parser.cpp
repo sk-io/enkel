@@ -127,7 +127,7 @@ std::unique_ptr<AST_Node> Parser::parse_expression() {
 // TODO: mixed infix and unary ops
 // https://eli.thegreenplace.net/2012/08/02/parsing-expressions-by-precedence-climbing
 std::unique_ptr<AST_Node> Parser::parse_infix(int min_prec) {
-    std::unique_ptr<AST_Node> result = parse_postfix();
+    std::unique_ptr<AST_Node> result = parse_prefix();
 
     while (true) {
         const Token& token = peek(0);
@@ -154,6 +154,15 @@ std::unique_ptr<AST_Node> Parser::parse_infix(int min_prec) {
     }
 
     return result;
+}
+
+std::unique_ptr<AST_Node> Parser::parse_prefix() {
+    if (peek().type == Token_Type::Keyword_Not) {
+        eat();
+        return std::make_unique<AST_Unary_Op>(parse_prefix(), Unary_Op::Not);
+    }
+
+    return parse_postfix();
 }
 
 std::unique_ptr<AST_Node> Parser::parse_postfix() {

@@ -53,6 +53,12 @@ static Token consume_identifier(const std::string& input, int& pos) {
 		type = Token_Type::Keyword_Null;
 	else if (str == "else")
 		type = Token_Type::Keyword_Else;
+	else if (str == "not")
+		type = Token_Type::Keyword_Not;
+	else if (str == "and")
+		type = Token_Type::Keyword_And;
+	else if (str == "or")
+		type = Token_Type::Keyword_Or;
 
 	if (str == "true") {
 		type = Token_Type::Boolean_Literal;
@@ -231,7 +237,7 @@ static Token read_next_token(const std::string& input, int& pos) {
 			pos++;
 			type = Token_Type::Not_Equals; break;
 		} else {
-			type = Token_Type::Not; break;
+			//type = Token_Type::Not; break;
 		}
 	}
 

@@ -33,6 +33,9 @@ enum class Token_Type {
     Keyword_Extends,
     Keyword_Is,
     Keyword_Null,
+    Keyword_Not,
+    Keyword_And,
+    Keyword_Or,
     Plus,
     Minus,
     Multiply,
@@ -43,7 +46,7 @@ enum class Token_Type {
     Less_Than_Equals,
     Equals,
     Not_Equals,
-    Not,
+    //Not, // should we have both ! and "not"?
     Open_Parenthesis,
     Closed_Parenthesis,
     Comma,

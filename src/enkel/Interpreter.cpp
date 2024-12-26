@@ -235,6 +235,14 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 
 		Eval_Result expr_eval = eval_node(sub->expr.get(), scope);
 
+		if (sub->op == Unary_Op::Not) {
+			if (expr_eval.value.type != Value_Type::Bool) {
+				error("'not' can only be applied to boolean types");
+			}
+
+			return {Value::from_bool(!expr_eval.value.as._bool)};
+		}
+
 		if (expr_eval.ref == nullptr) {
 			error("expression is not modifiable");
 		}
@@ -445,9 +453,19 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 				error();
 			}
 
-			Eval_Result result;
-			result.value = val;
-			return result;
+			return {val};
+		}
+
+		if (sub->op == Bin_Op::And || sub->op == Bin_Op::Or) {
+			if (rval.type != Value_Type::Bool || lval.type != Value_Type::Bool) {
+				error("expected boolean types");
+			}
+
+			bool result = sub->op == Bin_Op::And ?
+				(lval.as._bool && rval.as._bool) :
+				(lval.as._bool || rval.as._bool);
+
+			return {Value::from_bool(result)};
 		}
 
 		if (lval.type == Value_Type::GC_Obj && rval.type == Value_Type::GC_Obj) {
@@ -492,7 +510,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 			}
 		}
 
-		assert(false);
+		error("unhandled binary operator, sorry.");
 		return {};
 	}
 	case AST_Node_Type::Block: {
