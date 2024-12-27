@@ -4,7 +4,7 @@
 #include <iostream>
 
 std::unique_ptr<AST_Node> Parser::parse() {
-    std::unique_ptr<AST_Block> block = std::make_unique<AST_Block>();
+    std::unique_ptr<AST_Block> block = std::make_unique<AST_Block>(peek().src_info);
 
     while (peek().type != Token_Type::End_Of_File) {
         block->statements.push_back(parse_statement());
@@ -14,8 +14,8 @@ std::unique_ptr<AST_Node> Parser::parse() {
 }
 
 std::unique_ptr<AST_Node> Parser::parse_block() {
-    eat(Token_Type::Open_Curly);
-    std::unique_ptr<AST_Block> block = std::make_unique<AST_Block>();
+    const Source_Info& src_info = eat(Token_Type::Open_Curly).src_info;
+    std::unique_ptr<AST_Block> block = std::make_unique<AST_Block>(src_info);
 
     while (peek().type != Token_Type::Closed_Curly) {
         block->statements.push_back(parse_statement());
@@ -44,7 +44,7 @@ std::unique_ptr<AST_Node> Parser::parse_statement() {
 
     // if statement
     if (peek().type == Token_Type::Keyword_If) {
-        eat(Token_Type::Keyword_If);
+        Source_Info src_info = eat(Token_Type::Keyword_If).src_info;
         eat(Token_Type::Open_Parenthesis);
         auto cond = parse_expression();
         eat(Token_Type::Closed_Parenthesis);
@@ -58,22 +58,22 @@ std::unique_ptr<AST_Node> Parser::parse_statement() {
             else_body = parse_statement();
         }
 
-        return std::make_unique<AST_If>(std::move(cond), std::move(if_body), std::move(else_body));
+        return std::make_unique<AST_If>(src_info, std::move(cond), std::move(if_body), std::move(else_body));
     }
 
     // while loop
     if (peek().type == Token_Type::Keyword_While) {
-        eat(Token_Type::Keyword_While);
+        Source_Info src_info = eat(Token_Type::Keyword_While).src_info;
         eat(Token_Type::Open_Parenthesis);
         auto cond = parse_expression();
         eat(Token_Type::Closed_Parenthesis);
         auto body = parse_statement();
-        return std::make_unique<AST_While>(std::move(cond), std::move(body));
+        return std::make_unique<AST_While>(src_info, std::move(cond), std::move(body));
     }
 
     // for loop
     if (peek().type == Token_Type::Keyword_For) {
-        eat(Token_Type::Keyword_For);
+        Source_Info src_info = eat(Token_Type::Keyword_For).src_info;
         eat(Token_Type::Open_Parenthesis);
         eat(Token_Type::Keyword_Var);
 
@@ -86,32 +86,32 @@ std::unique_ptr<AST_Node> Parser::parse_statement() {
         eat(Token_Type::Closed_Parenthesis);
 
         auto body = parse_statement();
-        return std::make_unique<AST_For>(name, std::move(expr), std::move(body));
+        return std::make_unique<AST_For>(src_info, name, std::move(expr), std::move(body));
     }
 
     // return statement
     if (peek().type == Token_Type::Keyword_Return) {
-        eat(Token_Type::Keyword_Return);
+        Source_Info src_info = eat(Token_Type::Keyword_Return).src_info;
         auto expr = parse_expression();
         eat(Token_Type::Semicolon);
 
-        return std::make_unique<AST_Return>(std::move(expr));
+        return std::make_unique<AST_Return>(src_info, std::move(expr));
     }
 
     // break
     if (peek().type == Token_Type::Keyword_Break) {
-        eat(Token_Type::Keyword_Break);
+        Source_Info src_info = eat(Token_Type::Keyword_Break).src_info;
         eat(Token_Type::Semicolon);
 
-        return std::make_unique<AST_Implied>(AST_Node_Type::Break);
+        return std::make_unique<AST_Implied>(src_info, AST_Node_Type::Break);
     }
 
     // continue
     if (peek().type == Token_Type::Keyword_Continue) {
-        eat(Token_Type::Keyword_Continue);
+        Source_Info src_info = eat(Token_Type::Keyword_Continue).src_info;
         eat(Token_Type::Semicolon);
 
-        return std::make_unique<AST_Implied>(AST_Node_Type::Continue);
+        return std::make_unique<AST_Implied>(src_info, AST_Node_Type::Continue);
     }
 
     // expression
@@ -146,10 +146,10 @@ std::unique_ptr<AST_Node> Parser::parse_infix(int min_prec) {
             next_min_prec++;
         }
 
-        eat();
+        Source_Info src_info = eat().src_info;
 
         std::unique_ptr<AST_Node> rhs = parse_infix(next_min_prec);
-        std::unique_ptr<AST_Node> new_result = std::make_unique<AST_Bin_Op>(std::move(result), std::move(rhs), op);
+        std::unique_ptr<AST_Node> new_result = std::make_unique<AST_Bin_Op>(src_info, std::move(result), std::move(rhs), op);
         result = std::move(new_result);
     }
 
@@ -158,8 +158,8 @@ std::unique_ptr<AST_Node> Parser::parse_infix(int min_prec) {
 
 std::unique_ptr<AST_Node> Parser::parse_prefix() {
     if (peek().type == Token_Type::Keyword_Not) {
-        eat();
-        return std::make_unique<AST_Unary_Op>(parse_prefix(), Unary_Op::Not);
+        Source_Info src_info = eat().src_info;
+        return std::make_unique<AST_Unary_Op>(src_info, parse_prefix(), Unary_Op::Not);
     }
 
     return parse_postfix();
@@ -171,7 +171,7 @@ std::unique_ptr<AST_Node> Parser::parse_postfix() {
     while (true) {
         if (peek().type == Token_Type::Open_Parenthesis) {
             // function call
-            auto func_call = std::make_unique<AST_Func_Call>(std::move(result));
+            auto func_call = std::make_unique<AST_Func_Call>(peek().src_info, std::move(result));
 
             eat(Token_Type::Open_Parenthesis);
             if (peek().type != Token_Type::Closed_Parenthesis) {
@@ -189,17 +189,18 @@ std::unique_ptr<AST_Node> Parser::parse_postfix() {
             result = std::move(func_call);
         } else if (peek().type == Token_Type::Open_Bracket) {
             // array/table subscript
-            eat(Token_Type::Open_Bracket);
+            Source_Info src_info = eat(Token_Type::Open_Bracket).src_info;
             auto subscript = parse_expression();
             eat(Token_Type::Closed_Bracket);
 
-            auto node = std::make_unique<AST_Subscript>(std::move(result), std::move(subscript));
+            auto node = std::make_unique<AST_Subscript>(src_info, std::move(result), std::move(subscript));
             result = std::move(node);
         } else if (peek().type == Token_Type::Increment || peek().type == Token_Type::Decrement) {
             // ++ or --
-            Unary_Op op = eat().type == Token_Type::Increment ? Unary_Op::Increment : Unary_Op::Decrement;
+            auto token = eat();
+            Unary_Op op = token.type == Token_Type::Increment ? Unary_Op::Increment : Unary_Op::Decrement;
 
-            auto node = std::make_unique<AST_Unary_Op>(std::move(result), op);
+            auto node = std::make_unique<AST_Unary_Op>(token.src_info, std::move(result), op);
             result = std::move(node);
         } else {
             break;
@@ -221,30 +222,30 @@ std::unique_ptr<AST_Node> Parser::parse_primary() {
     // identifier
     if (peek().type == Token_Type::Identifier) {
         const Token& token = eat(Token_Type::Identifier);
-        return std::unique_ptr<AST_Node>(new AST_Var(token.str));
+        return std::make_unique<AST_Var>(token.src_info, token.str);
     }
 
     // string literal
     if (peek().type == Token_Type::String_Literal) {
         const Token& token = eat(Token_Type::String_Literal);
-        return std::make_unique<AST_String_Literal>(token.str);
+        return std::make_unique<AST_String_Literal>(token.src_info, token.str);
     }
 
     // number or bool literal
     if (peek().type == Token_Type::Number_Literal || peek().type == Token_Type::Boolean_Literal) {
         const Token& token = eat(peek().type);
-        return std::make_unique<AST_Literal>(token.value);
+        return std::make_unique<AST_Literal>(token.src_info, token.value);
     }
 
     // null
     if (peek().type == Token_Type::Keyword_Null) {
-        eat(Token_Type::Keyword_Null);
-        return std::make_unique<AST_Implied>(AST_Node_Type::Null);
+        const Token& token = eat(Token_Type::Keyword_Null);
+        return std::make_unique<AST_Implied>(token.src_info, AST_Node_Type::Null);
     }
 
     // array initializer
     if (peek().type == Token_Type::Open_Bracket) {
-        eat(Token_Type::Open_Bracket);
+        const Source_Info& src_info = eat(Token_Type::Open_Bracket).src_info;
 
         std::vector<std::unique_ptr<AST_Node>> items;
 
@@ -260,24 +261,24 @@ std::unique_ptr<AST_Node> Parser::parse_primary() {
         }
 
         eat(Token_Type::Closed_Bracket);
-        auto arr_init = std::make_unique<AST_Array_Init>();
+        auto arr_init = std::make_unique<AST_Array_Init>(src_info);
         arr_init->items = std::move(items);
         return arr_init;
     }
 
     // this
     if (peek().type == Token_Type::Keyword_This) {
-        eat(Token_Type::Keyword_This);
-        return std::make_unique<AST_Implied>(AST_Node_Type::This);
+        const Source_Info& src_info = eat(Token_Type::Keyword_This).src_info;
+        return std::make_unique<AST_Implied>(src_info, AST_Node_Type::This);
     }
 
     // new Foo()
     if (peek().type == Token_Type::Keyword_New) {
-        eat(Token_Type::Keyword_New);
+        const Source_Info& src_info = eat(Token_Type::Keyword_New).src_info;
 
         std::string name = eat(Token_Type::Identifier).str;
 
-        auto node = std::make_unique<AST_New>(name);
+        auto node = std::make_unique<AST_New>(src_info, name);
 
         eat(Token_Type::Open_Parenthesis);
         if (peek().type != Token_Type::Closed_Parenthesis) {
@@ -295,12 +296,12 @@ std::unique_ptr<AST_Node> Parser::parse_primary() {
     }
 
     const Token& token = peek();
-    error("unexpected token");
+    error("unexpected token type=" + std::to_string(static_cast<int>(token.type)));
     return nullptr;
 }
 
 std::unique_ptr<AST_Node> Parser::parse_var_decl() {
-    eat(Token_Type::Keyword_Var);
+    const Source_Info& src_info = eat(Token_Type::Keyword_Var).src_info;
 
     std::string name = eat(Token_Type::Identifier).str;
 
@@ -312,14 +313,14 @@ std::unique_ptr<AST_Node> Parser::parse_var_decl() {
     }
 
     eat(Token_Type::Semicolon);
-    return std::make_unique<AST_Var_Decl>(name, std::move(init));
+    return std::make_unique<AST_Var_Decl>(src_info, name, std::move(init));
 }
 
 std::unique_ptr<AST_Node> Parser::parse_func_decl(bool is_global) {
-    eat(Token_Type::Keyword_Func);
+    const Source_Info& src_info = eat(Token_Type::Keyword_Func).src_info;
 
     std::string name = eat(Token_Type::Identifier).str;
-    auto func_decl = std::make_unique<AST_Func_Decl>(name, nullptr, is_global);
+    auto func_decl = std::make_unique<AST_Func_Decl>(src_info, name, nullptr, is_global);
 
     eat(Token_Type::Open_Parenthesis);
     if (peek().type != Token_Type::Closed_Parenthesis) {
@@ -341,7 +342,7 @@ std::unique_ptr<AST_Node> Parser::parse_func_decl(bool is_global) {
 }
 
 std::unique_ptr<AST_Node> Parser::parse_class_decl() {
-    eat(Token_Type::Keyword_Class);
+    const Source_Info& src_info = eat(Token_Type::Keyword_Class).src_info;
     std::string name = eat(Token_Type::Identifier).str;
     std::string parent;
 
@@ -352,7 +353,7 @@ std::unique_ptr<AST_Node> Parser::parse_class_decl() {
 
     eat(Token_Type::Open_Curly);
 
-    auto class_decl = std::make_unique<AST_Class_Decl>(name, parent);
+    auto class_decl = std::make_unique<AST_Class_Decl>(src_info, name, parent);
 
     while (peek().type != Token_Type::Closed_Curly) {
         const Token& next = peek();
@@ -368,19 +369,23 @@ std::unique_ptr<AST_Node> Parser::parse_class_decl() {
             error();
         }
     }
+
     eat(Token_Type::Closed_Curly);
 
     return class_decl;
 }
 
 const Token& Parser::peek(int offset) {
+    if (offset < 0 || offset >= tokens.size()) {
+        error("peeking out of bounds??");
+    }
     return tokens[pos + offset];
 }
 
 const Token& Parser::eat(Token_Type expected) {
     const Token& token = tokens[pos++];
     if (expected != Token_Type::Any && token.type != expected) {
-        error("unexpected token");
+        error("unexpected token type=" + std::to_string(static_cast<int>(token.type)));
     }
 
     return token;
@@ -388,7 +393,9 @@ const Token& Parser::eat(Token_Type expected) {
 
 void Parser::error(const std::string& msg) const {
     if (error_callback != nullptr) {
-        error_callback(msg);
+        const auto& token = tokens[pos];
+
+        error_callback(msg, &token.src_info);
     } else {
         std::cout << "Parser error: " << msg << "\n";
         assert(false);

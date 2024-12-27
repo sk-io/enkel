@@ -5,6 +5,7 @@
 #include "scope.h"
 #include "definition.h"
 #include "gc.h"
+#include "source_info.h"
 
 #include <functional>
 #include <vector>
@@ -41,7 +42,7 @@ struct Class_Decl {
 
 class Interpreter {
 public:
-	using Error_Callback_Func = std::function<void(const std::string& msg)>;
+	using Error_Callback_Func = std::function<void(const std::string& msg, const Source_Info* info)>;
 
 	Interpreter();
 
@@ -54,11 +55,11 @@ public:
 	void set_error_callback(Error_Callback_Func _func) { error_callback = _func; }
 
 	std::string get_string(const Value& val) const;
-	Value call_function(Value func_ref, const std::vector<Value>& args, GC_Obj_Instance* obj = nullptr);
+	Value call_function(Value func_ref, const std::vector<Value>& args, GC_Obj_Instance* obj = nullptr, AST_Node* node = nullptr);
 	Value create_string(const std::string& str);
 private:
 	Eval_Result eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance* selected_obj = nullptr);
-	void error(const std::string& msg = "") const;
+	void error(const std::string& msg = "", const AST_Node* node = nullptr) const;
 
 	Error_Callback_Func error_callback = nullptr;
 	Scope global_scope;

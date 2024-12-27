@@ -33,5 +33,5 @@ struct Framework {
 extern Framework fw;
 
 void run_framework(const std::string& script_path);
-void framework_error(const std::string& msg = "");
+void framework_error(const std::string& msg = "", const Source_Info* info = nullptr);
 bool is_key_down(SDL_Keycode keycode);

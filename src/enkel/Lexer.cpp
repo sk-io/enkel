@@ -59,12 +59,13 @@ static Token consume_identifier(const std::string& input, int& pos) {
 		type = Token_Type::Keyword_And;
 	else if (str == "or")
 		type = Token_Type::Keyword_Or;
+	else if (str == "import")
+		type = Token_Type::Keyword_Import;
 
 	if (str == "true") {
 		type = Token_Type::Boolean_Literal;
 		val = Value::from_bool(true);
-	}
-	if (str == "false") {
+	} else if (str == "false") {
 		type = Token_Type::Boolean_Literal;
 		val = Value::from_bool(false);
 	}
@@ -160,7 +161,7 @@ static Token read_next_token(const std::string& input, int& pos) {
 	switch (ch) {
 	//case '\t': return consume_indentation(input, pos);
 	case '"': return consume_string_literal(input, pos);
-	//case '\n': type = Token_Type::New_Line; break;
+	case '\n': type = Token_Type::New_Line; break;
 	case '=':
 		if (next == '=') {
 			pos++;
@@ -249,12 +250,16 @@ static Token read_next_token(const std::string& input, int& pos) {
 std::vector<Token> Lexer::lex(const std::string& input) {
 	std::vector<Token> tokens;
 	int pos = 0;
+	int line = 0;
 
 	while (pos < input.length()) {
 		// multiline comment
 		if (input[pos] == '/' && input[pos + 1] == '*') {
 			pos += 2;
 			while (pos <= input.length()) {
+				if (input[pos] == '\n')
+					line++;
+
 				if (input[pos] == '*' && input[pos + 1] == '/') {
 					pos += 2;
 					break;
@@ -272,8 +277,13 @@ std::vector<Token> Lexer::lex(const std::string& input) {
 		}
 
 		Token token = read_next_token(input, pos);
-		if (token.type != Token_Type::Unknown)
+		token.src_info.line = line;
+		if (token.type != Token_Type::Unknown && token.type != Token_Type::New_Line)
 			tokens.push_back(token);
+
+		if (token.type == Token_Type::New_Line)
+			line++;
+
 		pos++;
 	}
 

@@ -9,7 +9,7 @@
 
 class Parser {
 public:
-	using Error_Callback_Func = std::function<void(const std::string& msg)>;
+	using Error_Callback_Func = std::function<void(const std::string& msg, const Source_Info* info)>;
 
 	Parser(std::vector<Token>&&) = delete;
 	Parser(const std::vector<Token>& _tokens) : tokens(_tokens) {}

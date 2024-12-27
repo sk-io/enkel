@@ -1,8 +1,10 @@
 #pragma once
 
 #include "value.h"
+#include "source_info.h"
 
 #include <string>
+#include <stdint.h>
 
 enum class Token_Type {
     Unknown,
@@ -36,6 +38,7 @@ enum class Token_Type {
     Keyword_Not,
     Keyword_And,
     Keyword_Or,
+    Keyword_Import,
     Plus,
     Minus,
     Multiply,
@@ -70,4 +73,5 @@ struct Token {
 	Token_Type type;
     Value value;
     std::string str;
+    Source_Info src_info;
 };

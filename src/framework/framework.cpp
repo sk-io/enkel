@@ -142,9 +142,19 @@ static void register_funcs() {
 	}});
 }
 
-void framework_error(const std::string& msg) {
-	std::cout << "Error: " << msg.c_str() << std::endl;
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error!", msg.c_str(), fw.window);
+void framework_error(const std::string& msg, const Source_Info* info) {
+	std::string final_msg;
+
+	if (info != nullptr) {
+		final_msg += "In [filename], line ";
+		final_msg += std::to_string(info->line + 1);
+		final_msg += "\n\n";
+	}
+
+	final_msg += msg;
+
+	std::cout << final_msg << std::endl;
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error!", final_msg.c_str(), fw.window);
 	assert(false);
 	exit(1);
 }
