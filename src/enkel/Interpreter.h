@@ -57,6 +57,10 @@ public:
 	std::string get_string(const Value& val) const;
 	Value call_function(Value func_ref, const std::vector<Value>& args, GC_Obj_Instance* obj = nullptr, AST_Node* node = nullptr);
 	Value create_string(const std::string& str);
+	const Value& expect_value(const Value& val, Value_Type expected_type, const AST_Node* node) const;
+
+	// temporary??
+	AST_Node* extern_func_node = nullptr; // set when calling extern func to pass info
 private:
 	Eval_Result eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance* selected_obj = nullptr);
 	void error(const std::string& msg = "", const AST_Node* node = nullptr) const;

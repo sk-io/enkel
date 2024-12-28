@@ -8,6 +8,8 @@ enum class Unary_Op {
     Increment,
     Decrement,
     Not,
+    Positive, // useless?
+    Negate,
 };
 
 enum class Bin_Op {

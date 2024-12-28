@@ -157,6 +157,16 @@ std::unique_ptr<AST_Node> Parser::parse_infix(int min_prec) {
 }
 
 std::unique_ptr<AST_Node> Parser::parse_prefix() {
+    if (peek().type == Token_Type::Plus) {
+        Source_Info src_info = eat().src_info;
+        return std::make_unique<AST_Unary_Op>(src_info, parse_prefix(), Unary_Op::Positive);
+    }
+
+    if (peek().type == Token_Type::Minus) {
+        Source_Info src_info = eat().src_info;
+        return std::make_unique<AST_Unary_Op>(src_info, parse_prefix(), Unary_Op::Negate);
+    }
+
     if (peek().type == Token_Type::Keyword_Not) {
         Source_Info src_info = eat().src_info;
         return std::make_unique<AST_Unary_Op>(src_info, parse_prefix(), Unary_Op::Not);

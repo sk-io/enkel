@@ -5,6 +5,7 @@
 
 Interpreter::Interpreter() :
 	global_scope(nullptr, nullptr) {
+
 	// typeof(value)
 	add_external_func({"typeof", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
 		const Value& val = args[0];
@@ -62,62 +63,87 @@ Interpreter::Interpreter() :
 
 	// min(value)
 	add_external_func({"min", 2, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
-		if (args[0].type != Value_Type::Num || args[1].type != Value_Type::Num) {
-			error("expected numbers");
-		}
-		return Value::from_num(std::min(args[0].as.num, args[1].as.num));
+		float a = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
+		float b = expect_value(args[1], Value_Type::Num, interp.extern_func_node).as.num;
+
+		return Value::from_num(std::min(a, b));
 	}});
 
 	// max(value)
 	add_external_func({"max", 2, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
-		if (args[0].type != Value_Type::Num || args[1].type != Value_Type::Num) {
-			error("expected numbers");
-		}
-		return Value::from_num(std::max(args[0].as.num, args[1].as.num));
+		float a = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
+		float b = expect_value(args[1], Value_Type::Num, interp.extern_func_node).as.num;
+
+		return Value::from_num(std::max(a, b));
 	}});
 
 	// floor(value)
 	add_external_func({"floor", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
-		if (args[0].type != Value_Type::Num) {
-			error("expected number argument");
-		}
-		
-		return Value::from_num(std::floor(args[0].as.num));
+		float x = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
+
+		return Value::from_num(std::floor(x));
 	}});
 
 	// ceil(value)
 	add_external_func({"ceil", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
-		if (args[0].type != Value_Type::Num) {
-			error("expected number argument");
-		}
+		float x = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
 
-		return Value::from_num(std::ceil(args[0].as.num));
+		return Value::from_num(std::ceil(x));
 	}});
 
 	// lerp(a, b, ratio)
 	add_external_func({"lerp", 3, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
-		if (args[0].type != Value_Type::Num ||
-			args[1].type != Value_Type::Num ||
-			args[2].type != Value_Type::Num) {
-			error("Expected 3 numbers");
-		}
-		float diff = args[1].as.num - args[0].as.num;
+		float a = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
+		float b = expect_value(args[1], Value_Type::Num, interp.extern_func_node).as.num;
+		float ratio = expect_value(args[2], Value_Type::Num, interp.extern_func_node).as.num;
 
-		return Value::from_num(args[0].as.num + diff * args[2].as.num);
+		return Value::from_num(a + (b - a) * ratio);
 	}});
 
-	// wrap(min, max, value)
-	// min is inclusive, max is exclusive
-	// returns value wrapped around [min, max]
-	// example: wrap(0, 10, -1) returns 9
-	add_external_func({"wrap", 3, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
-		if (args[0].type != Value_Type::Num ||
-			args[1].type != Value_Type::Num ||
-			args[2].type != Value_Type::Num) {
-			error("Expected 3 numbers");
+	// clamp(value, min, max) or clamp(value, max)
+	add_external_func({"clamp", 2, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		float value = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
+		float min_val = 0;
+		float max_val;
+
+		if (args.size() == 2) {
+			max_val = expect_value(args[1], Value_Type::Num, interp.extern_func_node).as.num;
+		} else if (args.size() == 3) {
+			min_val = expect_value(args[1], Value_Type::Num, interp.extern_func_node).as.num;
+			max_val = expect_value(args[2], Value_Type::Num, interp.extern_func_node).as.num;
+		} else {
+			error("Too many args!");
 		}
 
-		return Value::from_num(std::ceil(args[0].as.num));
+		float result = std::min(std::max(value, min_val), max_val);
+		return Value::from_num(result);
+	}});
+
+	// wrap(value, min, max) or wrap(value, max)
+	// min is inclusive, max is exclusive
+	// returns value wrapped around [min, max]
+	// example: wrap(-1, 0, 10) returns 9
+	add_external_func({"wrap", 2, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		float value = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
+		float min_val = 0;
+		float max_val;
+
+		if (args.size() == 2) {
+			max_val = expect_value(args[1], Value_Type::Num, interp.extern_func_node).as.num;
+		} else if (args.size() == 3) {
+			min_val = expect_value(args[1], Value_Type::Num, interp.extern_func_node).as.num;
+			max_val = expect_value(args[2], Value_Type::Num, interp.extern_func_node).as.num;
+		} else {
+			error("Too many args!");
+		}
+
+		float range = max_val - min_val;
+
+		value -= min_val;
+		value = fmod(value, range);
+		value = fmod(value + range, range);
+
+		return Value::from_num(value + min_val);
 	}});
 }
 
@@ -183,6 +209,7 @@ Value Interpreter::call_function(Value func_ref, const std::vector<Value>& args,
 			error("Too few arguments", node);
 		}
 
+		extern_func_node = node;
 		return func.callback(*this, args);
 	}
 
@@ -216,6 +243,14 @@ Value Interpreter::create_string(const std::string& str) {
 	return val;
 }
 
+const Value& Interpreter::expect_value(const Value& val, Value_Type expected_type, const AST_Node* node) const {
+	if (val.type != expected_type) {
+		error("Unexpected value type", node);
+	}
+
+	return val;
+}
+
 // a.b()
 // selected_obj is set for children evals calls when using dot operator
 Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance* selected_obj) {
@@ -236,11 +271,17 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		Eval_Result expr_eval = eval_node(sub->expr.get(), scope);
 
 		if (sub->op == Unary_Op::Not) {
-			if (expr_eval.value.type != Value_Type::Bool) {
-				error("'not' can only be applied to boolean types", node);
-			}
+			bool b = expect_value(expr_eval.value, Value_Type::Bool, node).as._bool;
 
 			return {Value::from_bool(!expr_eval.value.as._bool)};
+		} else if (sub->op == Unary_Op::Positive) {
+			float val = expect_value(expr_eval.value, Value_Type::Num, node).as.num;
+
+			return {Value::from_num(val)};
+		} else if (sub->op == Unary_Op::Negate) {
+			float val = expect_value(expr_eval.value, Value_Type::Num, node).as.num;
+
+			return {Value::from_num(-val)};
 		}
 
 		if (expr_eval.ref == nullptr) {
@@ -289,10 +330,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		if (sub->op == Bin_Op::Dot) {
 			// dot operator needs to not immediately change scope,
 			// but store the scope and change when rightside function call happens
-			Value lval = eval_node(sub->left.get(), scope).value;
-			if (lval.type != Value_Type::GC_Obj) {
-				error("Expected class instance", node);
-			}
+			Value lval = expect_value(eval_node(sub->left.get(), scope).value, Value_Type::GC_Obj, node);
 
 			GC_Obj* gc_obj = (GC_Obj*) lval.as.ptr;
 
@@ -345,10 +383,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 						error("Incorrect number of args", node);
 					}
 
-					Value index_val = eval_node(fcall->args[0].get(), scope).value;
-					if (index_val.type != Value_Type::Num) {
-						error("Expected integer index", node);
-					}
+					Value index_val = expect_value(eval_node(fcall->args[0].get(), scope).value, Value_Type::Num, node);
 
 					int index = (int) index_val.as.num;
 					if (index < 0 || index >= arr->arr.size()) {
@@ -457,13 +492,12 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		}
 
 		if (sub->op == Bin_Op::And || sub->op == Bin_Op::Or) {
-			if (rval.type != Value_Type::Bool || lval.type != Value_Type::Bool) {
-				error("Expected boolean types", node);
-			}
+			bool left = expect_value(lval, Value_Type::Bool, node).as._bool;
+			bool right = expect_value(rval, Value_Type::Bool, node).as._bool;
 
 			bool result = sub->op == Bin_Op::And ?
-				(lval.as._bool && rval.as._bool) :
-				(lval.as._bool || rval.as._bool);
+				(left && right) :
+				(left || right);
 
 			return {Value::from_bool(result)};
 		}
@@ -473,7 +507,6 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 			GC_Obj* robj = (GC_Obj*) rval.as.ptr;
 
 			if (lobj->type == GC_Obj_Type::String && robj->type == GC_Obj_Type::String) {
-
 				GC_Obj_String* lstr = (GC_Obj_String*) lval.as.ptr;
 				GC_Obj_String* rstr = (GC_Obj_String*) rval.as.ptr;
 
@@ -597,7 +630,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 			arg_evals.push_back(eval_node(arg.get(), scope).value);
 		}
 		
-		Value result = call_function(func_ref, arg_evals, selected_obj != nullptr ? selected_obj : scope->this_obj);
+		Value result = call_function(func_ref, arg_evals, selected_obj != nullptr ? selected_obj : scope->this_obj, node);
 		return {result};
 	}
 	case AST_Node_Type::If: {
