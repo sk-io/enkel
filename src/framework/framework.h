@@ -28,6 +28,7 @@ struct Framework {
 
 	std::vector<Image> images;
 	std::unordered_map<int32_t, bool> keyboard_state;
+	std::vector<std::string> script_paths;
 };
 
 extern Framework fw;

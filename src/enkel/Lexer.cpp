@@ -287,7 +287,5 @@ std::vector<Token> Lexer::lex(const std::string& input) {
 		pos++;
 	}
 
-	tokens.push_back(Token{ Token_Type::End_Of_File });
-
 	return tokens;
 }

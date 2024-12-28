@@ -1,6 +1,8 @@
 #pragma once
 
-// TODO: source file, line offset, etc..
+#include <stdint.h>
+
 struct Source_Info {
     int line;
+    short file_index;
 };

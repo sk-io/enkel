@@ -18,10 +18,12 @@
 Framework fw{};
 Graphics gfx{};
 
-static char* read_file(const char* path, uint64_t& size) {
+static char* read_file(const std::string& path, uint64_t& size) {
 	size = 0;
-	FILE* file = fopen(path, "rb");
-	assert(file);
+	FILE* file = fopen(path.c_str(), "rb");
+	if (!file) {
+		framework_error("Failed to open file: " + path);
+	}
 
 	fseek(file, 0, SEEK_END);
 	size = ftell(file);
@@ -146,7 +148,9 @@ void framework_error(const std::string& msg, const Source_Info* info) {
 	std::string final_msg;
 
 	if (info != nullptr) {
-		final_msg += "In [filename], line ";
+		final_msg += "In ";
+		final_msg += fw.script_paths[info->file_index];
+		final_msg += ", line ";
 		final_msg += std::to_string(info->line + 1);
 		final_msg += "\n\n";
 	}
@@ -185,14 +189,52 @@ static void init_sdl() {
 	gfx.init();
 }
 
+static std::vector<Token> load_tokens(const std::string& script_path) {
+	uint64_t siz;
+	char* buf = read_file(script_path, siz);
+
+	int file_index = fw.script_paths.size();
+
+	std::vector<Token> tokens = Lexer::lex(buf);
+	free(buf);
+
+	fw.script_paths.push_back(script_path);
+
+	for (auto& token : tokens)
+		token.src_info.file_index = file_index;
+
+	return tokens;
+}
+
+static bool is_imported(const std::string& script_path) {
+	for (const auto& path : fw.script_paths) {
+		if (script_path == path)
+			return true;
+	}
+	return false;
+}
+
 static void init(const std::string& script_path) {
 	init_sdl();
+	std::vector<Token> tokens = load_tokens(script_path);
 
-	uint64_t siz;
-	char* buf = read_file(script_path.c_str(), siz);
+	// scan for import statements
+	for (int i = 0; i < tokens.size() - 2; i++) {
+		if (tokens[i].type == Token_Type::Keyword_Import &&
+			tokens[i + 1].type == Token_Type::String_Literal &&
+			tokens[i + 2].type == Token_Type::Semicolon) {
+			std::string import_path = tokens[i + 1].str;
+			tokens.erase(tokens.begin() + i, tokens.begin() + i + 3);
 
-	auto tokens = Lexer::lex(buf);
-	free(buf);
+			if (!is_imported(import_path)) {
+				std::vector<Token> imported_tokens = load_tokens(import_path);
+				tokens.insert(tokens.begin() + i, imported_tokens.begin(), imported_tokens.end());
+			}
+
+			// rescan current token
+			i--;
+		}
+	}
 
 	Parser parser(tokens);
 	parser.set_error_callback(framework_error);

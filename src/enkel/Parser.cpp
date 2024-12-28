@@ -296,7 +296,7 @@ std::unique_ptr<AST_Node> Parser::parse_primary() {
     }
 
     const Token& token = peek();
-    error("unexpected token type=" + std::to_string(static_cast<int>(token.type)));
+    error("Unexpected token type " + std::to_string(static_cast<int>(token.type)));
     return nullptr;
 }
 
@@ -375,17 +375,23 @@ std::unique_ptr<AST_Node> Parser::parse_class_decl() {
     return class_decl;
 }
 
+const Token eof_token = {Token_Type::End_Of_File};
+
 const Token& Parser::peek(int offset) {
-    if (offset < 0 || offset >= tokens.size()) {
-        error("peeking out of bounds??");
+    if (pos + offset < 0) {
+        error("Peeking out of bounds??");
     }
+
+    if (pos + offset >= tokens.size())
+        return eof_token;
+
     return tokens[pos + offset];
 }
 
 const Token& Parser::eat(Token_Type expected) {
     const Token& token = tokens[pos++];
     if (expected != Token_Type::Any && token.type != expected) {
-        error("unexpected token type=" + std::to_string(static_cast<int>(token.type)));
+        error("Unexpected token type " + std::to_string(static_cast<int>(token.type)));
     }
 
     return token;
