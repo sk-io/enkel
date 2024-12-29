@@ -122,7 +122,7 @@ static void register_funcs() {
 	}});
 
 	// --- input ---
-	fw.interp.add_external_func({"key_down", 1, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	fw.interp.add_external_func({"key_pressed", 1, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
 		SDL_Keycode code = SDL_GetKeyFromName(interp.get_string(args[0]).c_str());
 
 		if (code == SDLK_UNKNOWN) {
@@ -130,6 +130,23 @@ static void register_funcs() {
 		}
 
 		return {Value::from_bool(is_key_down(code))};
+	}});
+
+	fw.interp.add_external_func({"mouse_pressed", 1, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		const auto& button = interp.get_string(args[0]);
+
+		bool result;
+		if (button == "left") {
+			result = fw.mouse_left;
+		} else if (button == "right") {
+			result = fw.mouse_right;
+		} else if (button == "middle") {
+			result = fw.mouse_middle;
+		} else {
+			framework_error("Unknown mouse button");
+		}
+
+		return {Value::from_bool(result)};
 	}});
 
 	// --- utils ---
@@ -305,6 +322,16 @@ void run_framework(const std::string& script_path) {
 				break;
 			case SDL_KEYUP:
 				fw.keyboard_state[event.key.keysym.sym] = false;
+				break;
+			case SDL_MOUSEBUTTONDOWN:
+			case SDL_MOUSEBUTTONUP:
+				//std::cout << std::to_string(event.button.button) << std::endl;
+				if (event.button.button == 1)
+					fw.mouse_left = event.button.state;
+				else if (event.button.button == 2)
+					fw.mouse_middle = event.button.state;
+				else if (event.button.button == 3)
+					fw.mouse_right = event.button.state;
 				break;
 			}
 		}
