@@ -2,6 +2,8 @@
 
 #include <assert.h>
 #include <iostream>
+#include <algorithm>
+#include <cmath>
 
 Interpreter::Interpreter() :
 	global_scope(nullptr, nullptr) {

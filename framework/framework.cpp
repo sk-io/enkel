@@ -1,9 +1,11 @@
+#include "framework.h"
+#include "graphics.h"
 
+#include <enkel/lexer.h>
+#include <enkel/parser.h>
+#include <enkel/interpreter.h>
+#include <enkel/ast_util.h>
 
-#include <enkel/Lexer.h>
-#include <enkel/Parser.h>
-#include <enkel/Interpreter.h>
-#include <enkel/AST_Util.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <assert.h>
@@ -11,9 +13,6 @@
 #include <iostream>
 #include <stdlib.h>
 #include <chrono>
-
-#include "framework.h"
-#include "graphics.h"
 
 Framework fw{};
 Graphics gfx{};

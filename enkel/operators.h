@@ -56,6 +56,7 @@ static constexpr Bin_Op get_bin_op(Token_Type type) {
     case Token_Type::Divide_Equals: return Bin_Op::Div_Assign;
     case Token_Type::Keyword_And: return Bin_Op::And;
     case Token_Type::Keyword_Or: return Bin_Op::Or;
+	default: break;
     }
 
     return Bin_Op::Not_A_Bin_Op;

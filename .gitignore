@@ -1,0 +1,3 @@
+*.o
+framework
+libenkel.a

@@ -1,0 +1,18 @@
+var time = 0;
+
+func init() {
+	set_size(800, 600);
+}
+
+func update() {
+	time += delta_time * 3;
+}
+
+func draw() {
+	set_color("#ffff99");
+	clear();
+
+	set_color("#000000");
+	fill_rect(width/2 + sin(time) * 300, height/2 + cos(time * 1.19423) * 280, 16, 16);
+}
+

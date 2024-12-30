@@ -1,6 +1,7 @@
 #include "gc.h"
 
 #include <assert.h>
+#include <algorithm>
 
 void GC_Heap::add_obj(GC_Obj* obj) {
 	objects.push_back(std::unique_ptr<GC_Obj>(obj));
