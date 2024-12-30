@@ -17,6 +17,7 @@ enum class AST_Node_Type {
 	Block,
 	Anon_Block,
 	Var_Decl,
+	Multi_Var_Decl,
 	Var,
 	Func_Decl,
 	Return,
@@ -87,6 +88,13 @@ struct AST_Var_Decl : public AST_Node {
 
 	AST_Var_Decl(Source_Info _src_info, const std::string& _name, std::unique_ptr<AST_Node> _init) :
 		AST_Node(AST_Node_Type::Var_Decl, _src_info), name(_name), init(std::move(_init)) {}
+};
+
+struct AST_Multi_Var_Decl : public AST_Node {
+	std::vector<std::unique_ptr<AST_Node>> decls;
+
+	AST_Multi_Var_Decl(Source_Info _src_info) :
+		AST_Node(AST_Node_Type::Multi_Var_Decl, _src_info) {}
 };
 
 // TODO: rename to identifier

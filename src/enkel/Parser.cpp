@@ -92,7 +92,12 @@ std::unique_ptr<AST_Node> Parser::parse_statement() {
     // return statement
     if (peek().type == Token_Type::Keyword_Return) {
         Source_Info src_info = eat(Token_Type::Keyword_Return).src_info;
-        auto expr = parse_expression();
+
+        std::unique_ptr<AST_Node> expr;
+
+        if (peek().type != Token_Type::Semicolon) {
+            expr = parse_expression();
+        }
         eat(Token_Type::Semicolon);
 
         return std::make_unique<AST_Return>(src_info, std::move(expr));
@@ -320,6 +325,31 @@ std::unique_ptr<AST_Node> Parser::parse_var_decl() {
     if (peek().type == Token_Type::Assignment) {
         eat(Token_Type::Assignment);
         init = parse_expression();
+    }
+
+    if (peek().type != Token_Type::Semicolon) {
+        auto multi_decl = std::make_unique<AST_Multi_Var_Decl>(src_info);
+        auto first_var = std::make_unique<AST_Var_Decl>(src_info, name, std::move(init));
+        multi_decl->decls.push_back(std::move(first_var));
+        
+        while (peek().type != Token_Type::Semicolon) {
+            eat(Token_Type::Comma);
+
+            auto ident_token = eat(Token_Type::Identifier);
+            std::string next_name = ident_token.str;
+            std::unique_ptr<AST_Node> next_init;
+
+            if (peek().type == Token_Type::Assignment) {
+                eat();
+
+                next_init = parse_expression();
+            }
+
+            multi_decl->decls.push_back(std::make_unique<AST_Var_Decl>(ident_token.src_info, next_name, std::move(next_init)));
+        }
+
+        eat(Token_Type::Semicolon);
+        return multi_decl;
     }
 
     eat(Token_Type::Semicolon);

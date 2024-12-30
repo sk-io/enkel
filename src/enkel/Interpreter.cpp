@@ -77,6 +77,13 @@ Interpreter::Interpreter() :
 		return Value::from_num(std::max(a, b));
 	}});
 
+	// abs(value)
+	add_external_func({"abs", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		float x = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
+
+		return Value::from_num(std::abs(x));
+	}});
+
 	// floor(value)
 	add_external_func({"floor", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
 		float x = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
@@ -144,6 +151,30 @@ Interpreter::Interpreter() :
 		value = fmod(value + range, range);
 
 		return Value::from_num(value + min_val);
+	}});
+
+	// sqrt(value)
+	add_external_func({"sqrt", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		float x = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
+		return Value::from_num(std::sqrt(x));
+	}});
+
+	// sin(value)
+	add_external_func({"sin", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		float x = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
+		return Value::from_num(std::sin(x));
+	}});
+
+	// cos(value)
+	add_external_func({"cos", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		float x = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
+		return Value::from_num(std::cos(x));
+	}});
+
+	// tan(value)
+	add_external_func({"tan", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		float x = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
+		return Value::from_num(std::tan(x));
 	}});
 }
 
@@ -425,6 +456,18 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 			AST_Var* compare = (AST_Var*) sub->right.get();
 			GC_Obj_Instance* inst = (GC_Obj_Instance*) gc_obj;
 
+			//std::function<bool(const std::string&, const std::string&)> is_class_or_parent =
+			//	[&] (const std::string& class_name, const std::string& search) -> bool {
+			//	if (class_name == search)
+			//		return true;
+
+			//	if (class_decls.find(search) != class_decls.end()) {
+			//		return is_class_or_parent(class_decls[search].parent, search);
+			//	}
+
+			//	return false;
+			//};
+
 			// TODO: check parent class
 			return {Value::from_bool(inst->class_name == compare->name)};
 		}
@@ -570,6 +613,13 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		scope->set_def(sub->name, val);
 		break;
 	}
+	case AST_Node_Type::Multi_Var_Decl: {
+		AST_Multi_Var_Decl* sub = (AST_Multi_Var_Decl*) node;
+		for (auto& decl : sub->decls) {
+			eval_node(decl.get(), scope);
+		}
+		break;
+	}
 	case AST_Node_Type::Var: {
 		AST_Var* sub = (AST_Var*) node;
 		
@@ -584,7 +634,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		}
 
 		if (var == nullptr) {
-			error("No such variable: " + sub->name, node);
+			error("No such variable/function: " + sub->name, node);
 		}
 
 		Eval_Result ret;
@@ -608,7 +658,10 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 	case AST_Node_Type::Return: {
 		AST_Return* sub = (AST_Return*) node;
 
-		Value ret_val = eval_node(sub->expr.get(), scope).value;
+		Value ret_val{};
+		if (sub->expr != nullptr) {
+			ret_val = eval_node(sub->expr.get(), scope).value;
+		}
 		
 		Eval_Result result;
 		result.cf = Control_Flow::Return;
