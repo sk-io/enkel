@@ -150,12 +150,17 @@ static void register_funcs() {
 
 	// --- utils ---
 	fw.interp.add_external_func({"rand", 0, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
-		return {Value::from_num(rand() / (float) (RAND_MAX + 1))};
+		return {Value::from_num(rand() / (RAND_MAX + 1.0f))};
 	}});
 
 	fw.interp.add_external_func({"set_framerate", 1, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
 		float fps = args[0].as.num;
 		fw.framerate = fps;
+		return {};
+	}});
+
+	fw.interp.add_external_func({"exit", 0, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
+		fw.running = false;
 		return {};
 	}});
 }
@@ -291,20 +296,21 @@ static void init(const std::string& script_path) {
 void run_framework(const std::string& script_path) {
 	using namespace std::chrono;
 
+	srand(time(0));
+
 	init(script_path);
 
 	int prev_ticks = SDL_GetTicks();
 	int frame_count = 0;
-	bool running = true;
 
 	auto prev_frame_time = high_resolution_clock::now();
 
-	while (running) {
+	while (fw.running) {
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
 			case SDL_QUIT:
-				running = false;
+				fw.running = false;
 				break;
 			case SDL_MOUSEMOTION:
 				fw.interp.get_global_scope().set_def("mouse_x", Value::from_num(event.motion.x));

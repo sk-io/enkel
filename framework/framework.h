@@ -20,6 +20,7 @@ struct Framework {
 	int scale = 1;
 	float framerate = 60; // <= 0 means uncapped
 	std::string title = "enkel framework";
+	bool running = true;
 
 	Interpreter interp;
 	Value init_func;
