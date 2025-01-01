@@ -12,10 +12,11 @@ Definition* Scope::find_def(const std::string& name, bool recursive) {
     return nullptr;
 }
 
-void Scope::set_def(const std::string& name, const Value& value) {
+void Scope::set_def(const std::string& name, const Value& value, int flags) {
     Definition def;
     def.name = name;
     def.value = value;
     def.scope = this;
+    def.flags = flags;
     definitions[name] = def;
 }

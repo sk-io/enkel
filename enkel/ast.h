@@ -85,9 +85,10 @@ struct AST_Block : public AST_Node {
 struct AST_Var_Decl : public AST_Node {
 	std::string name;
 	std::unique_ptr<AST_Node> init;
+	bool is_const;
 
-	AST_Var_Decl(Source_Info _src_info, const std::string& _name, std::unique_ptr<AST_Node> _init) :
-		AST_Node(AST_Node_Type::Var_Decl, _src_info), name(_name), init(std::move(_init)) {}
+	AST_Var_Decl(Source_Info _src_info, const std::string& _name, std::unique_ptr<AST_Node> _init, bool _is_const) :
+		AST_Node(AST_Node_Type::Var_Decl, _src_info), name(_name), init(std::move(_init)), is_const(_is_const) {}
 };
 
 struct AST_Multi_Var_Decl : public AST_Node {

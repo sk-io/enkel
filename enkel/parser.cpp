@@ -30,7 +30,7 @@ std::unique_ptr<AST_Node> Parser::parse_statement() {
         return parse_block();
     }
 
-    if (peek().type == Token_Type::Keyword_Var) {
+    if (peek().type == Token_Type::Keyword_Var || peek().type == Token_Type::Keyword_Const) {
         return parse_var_decl();
     }
 
@@ -316,12 +316,12 @@ std::unique_ptr<AST_Node> Parser::parse_primary() {
 }
 
 std::unique_ptr<AST_Node> Parser::parse_var_decl() {
-    const Source_Info& src_info = eat(Token_Type::Keyword_Var).src_info;
-
+    const Token& qualifier = eat();
+    const Source_Info& src_info = qualifier.src_info;
+    bool is_const = qualifier.type == Token_Type::Keyword_Const;
     std::string name = eat(Token_Type::Identifier).str;
 
     std::unique_ptr<AST_Node> init;
-
     if (peek().type == Token_Type::Assignment) {
         eat(Token_Type::Assignment);
         init = parse_expression();
@@ -329,7 +329,7 @@ std::unique_ptr<AST_Node> Parser::parse_var_decl() {
 
     if (peek().type != Token_Type::Semicolon) {
         auto multi_decl = std::make_unique<AST_Multi_Var_Decl>(src_info);
-        auto first_var = std::make_unique<AST_Var_Decl>(src_info, name, std::move(init));
+        auto first_var = std::make_unique<AST_Var_Decl>(src_info, name, std::move(init), is_const);
         multi_decl->decls.push_back(std::move(first_var));
         
         while (peek().type != Token_Type::Semicolon) {
@@ -345,7 +345,9 @@ std::unique_ptr<AST_Node> Parser::parse_var_decl() {
                 next_init = parse_expression();
             }
 
-            multi_decl->decls.push_back(std::make_unique<AST_Var_Decl>(ident_token.src_info, next_name, std::move(next_init)));
+            multi_decl->decls.push_back(
+                std::make_unique<AST_Var_Decl>(ident_token.src_info, next_name, std::move(next_init), is_const)
+            );
         }
 
         eat(Token_Type::Semicolon);
@@ -353,7 +355,7 @@ std::unique_ptr<AST_Node> Parser::parse_var_decl() {
     }
 
     eat(Token_Type::Semicolon);
-    return std::make_unique<AST_Var_Decl>(src_info, name, std::move(init));
+    return std::make_unique<AST_Var_Decl>(src_info, name, std::move(init), is_const);
 }
 
 std::unique_ptr<AST_Node> Parser::parse_func_decl(bool is_global) {

@@ -193,7 +193,7 @@ void Interpreter::add_external_func(const Extern_Func& func) {
 	Value val;
 	val.type = Value_Type::Extern_Func;
 	val.as.i = id;
-	global_scope.set_def(func.name, val);
+	global_scope.set_def(func.name, val, DEF_FUNC);
 }
 
 std::string Interpreter::get_string(const Value& val) const {
@@ -350,7 +350,9 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 			Value rval = eval_node(sub->right.get(), scope).value;
 
 			Value* ref = eval_node(sub->left.get(), scope).ref;
-			assert(ref != nullptr);
+			if (ref == nullptr) {
+				error("Expression is not modifiable", node);
+			}
 
 			*ref = rval;
 
@@ -612,7 +614,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 			val = eval_node(sub->init.get(), scope).value;
 		}
 
-		scope->set_def(sub->name, val);
+		scope->set_def(sub->name, val, sub->is_const ? DEF_CONST : 0);
 		break;
 	}
 	case AST_Node_Type::Multi_Var_Decl: {
@@ -641,7 +643,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 
 		Eval_Result ret;
 		ret.value = var->value;
-		ret.ref = &var->value;
+		ret.ref = (var->flags & (DEF_CONST | DEF_FUNC)) ? nullptr : &var->value;
 		return ret;
 	}
 	case AST_Node_Type::Func_Decl: {
@@ -654,7 +656,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		val.type = Value_Type::Func_Ref;
 		val.as.ptr = (void*) sub;
 
-		scope->set_def(sub->name, val);
+		scope->set_def(sub->name, val, DEF_FUNC);
 		break;
 	}
 	case AST_Node_Type::Return: {
@@ -877,6 +879,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 
 			for (const auto& it : class_decls[cur].scope.definitions) {
 				const std::string& def_name = it.first;
+				const Definition& def = it.second;
 
 				if (instance->scope.find_def(def_name, false) != nullptr) {
 					// TODO: proper error handling, cant overload a var with a func etc.
@@ -884,7 +887,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 					continue;
 				}
 
-				instance->scope.set_def(def_name, it.second.value);
+				instance->scope.set_def(def_name, def.value, def.flags);
 			}
 
 			cur = class_decls[cur].parent;

@@ -12,7 +12,7 @@ struct Scope {
 	Scope(Scope* _parent, GC_Obj_Instance* _this_obj) : parent(_parent), this_obj(_this_obj) {}
 
 	Definition* find_def(const std::string& name, bool recursive = true);
-	void set_def(const std::string& name, const Value& value);
+	void set_def(const std::string& name, const Value& value, int flags = 0);
 
 	// parent scope
 	Scope* parent = nullptr;

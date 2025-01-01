@@ -39,6 +39,7 @@ enum class Token_Type {
     Keyword_And,
     Keyword_Or,
     Keyword_Import,
+    Keyword_Const,
     Plus,
     Minus,
     Multiply,

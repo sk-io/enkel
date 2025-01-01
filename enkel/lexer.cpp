@@ -61,6 +61,8 @@ static Token consume_identifier(const std::string& input, int& pos) {
 		type = Token_Type::Keyword_Or;
 	else if (str == "import")
 		type = Token_Type::Keyword_Import;
+	else if (str == "const")
+		type = Token_Type::Keyword_Const;
 
 	if (str == "true") {
 		type = Token_Type::Boolean_Literal;
