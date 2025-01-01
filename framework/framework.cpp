@@ -75,16 +75,21 @@ static void register_funcs() {
 	}});
 
 	fw.interp.add_external_func({"set_color", 1, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
-		const std::string& str = fw.interp.get_string(args[0]);
+		uint32_t i = 0;
+		if (args[0].type == Value_Type::GC_Obj) {
+			// TODO: make sure its a string
+			const std::string& str = fw.interp.get_string(args[0]);
 
-		if (str[0] != '#')
-			assert(false);
+			if (str[0] != '#')
+				framework_error("Expected starting # in hex color string", &interp.extern_func_node->src_info);
 
-		char* end;
-		uint32_t i = strtol(str.c_str() + 1, &end, 16);
+			char* end;
+			i = strtol(str.c_str() + 1, &end, 16);
 
-		if (*end != 0) {
-			assert(false);
+			if (*end != 0)
+				framework_error("Failed to parse hex color string", &interp.extern_func_node->src_info);
+		} else if (args[0].type == Value_Type::Num) {
+			i = (uint32_t) args[0].as.num;
 		}
 
 		gfx.set_color(i);
@@ -275,6 +280,20 @@ static void init(const std::string& script_path) {
 	fw.interp.get_global_scope().set_def("mouse_y", Value::from_num(0));
 
 	fw.interp.get_global_scope().set_def("delta_time", Value::from_num(0));
+
+	// math constants
+	fw.interp.get_global_scope().set_def("PI", Value::from_num(3.14159265f), DEF_CONST);
+	fw.interp.get_global_scope().set_def("TAU", Value::from_num(3.14159265f * 2.0f), DEF_CONST);
+
+	// colors
+	fw.interp.get_global_scope().set_def("BLACK", Value::from_num(0), DEF_CONST);
+	fw.interp.get_global_scope().set_def("WHITE", Value::from_num(0xFFFFFF), DEF_CONST);
+	fw.interp.get_global_scope().set_def("RED", Value::from_num(0xFF0000), DEF_CONST);
+	fw.interp.get_global_scope().set_def("GREEN", Value::from_num(0x00FF00), DEF_CONST);
+	fw.interp.get_global_scope().set_def("BLUE", Value::from_num(0x0000FF), DEF_CONST);
+	fw.interp.get_global_scope().set_def("YELLOW", Value::from_num(0xFFFF00), DEF_CONST);
+	fw.interp.get_global_scope().set_def("MAGENTA", Value::from_num(0xFF00FF), DEF_CONST);
+	fw.interp.get_global_scope().set_def("CYAN", Value::from_num(0x00FFFF), DEF_CONST);
 
 	auto try_get_func = [] (const std::string& name) -> Value {
 		Definition* def = fw.interp.get_global_scope().find_def(name);
