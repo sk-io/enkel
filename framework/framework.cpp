@@ -13,6 +13,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <chrono>
+#include <filesystem>
 
 Framework fw{};
 Graphics gfx{};
@@ -210,6 +211,14 @@ static void init_sdl() {
 	gfx.init();
 }
 
+static bool is_imported(const std::string& script_path) {
+	for (const auto& path : fw.script_paths) {
+		if (script_path == path)
+			return true;
+	}
+	return false;
+}
+
 static std::vector<Token> load_tokens(const std::string& script_path) {
 	uint64_t siz;
 	char* buf = read_file(script_path, siz);
@@ -224,21 +233,6 @@ static std::vector<Token> load_tokens(const std::string& script_path) {
 	for (auto& token : tokens)
 		token.src_info.file_index = file_index;
 
-	return tokens;
-}
-
-static bool is_imported(const std::string& script_path) {
-	for (const auto& path : fw.script_paths) {
-		if (script_path == path)
-			return true;
-	}
-	return false;
-}
-
-static void init(const std::string& script_path) {
-	init_sdl();
-	std::vector<Token> tokens = load_tokens(script_path);
-
 	// scan for import statements
 	for (int i = 0; i < tokens.size() - 2; i++) {
 		if (tokens[i].type == Token_Type::Keyword_Import &&
@@ -248,14 +242,20 @@ static void init(const std::string& script_path) {
 			tokens.erase(tokens.begin() + i, tokens.begin() + i + 3);
 
 			if (!is_imported(import_path)) {
-				std::vector<Token> imported_tokens = load_tokens(import_path);
+				auto absolute_path = std::filesystem::absolute(script_path).parent_path() / import_path;
+
+				std::vector<Token> imported_tokens = load_tokens(absolute_path.string());
 				tokens.insert(tokens.begin() + i, imported_tokens.begin(), imported_tokens.end());
 			}
-
-			// rescan current token
-			i--;
 		}
 	}
+
+	return tokens;
+}
+
+static void init(const std::string& script_path) {
+	init_sdl();
+	std::vector<Token> tokens = load_tokens(script_path);
 
 	Parser parser(tokens);
 	parser.set_error_callback(framework_error);
