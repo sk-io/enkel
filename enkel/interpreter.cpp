@@ -371,7 +371,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 
 			// TODO: ability to register methods to types?
 			// or just, declare classes externally?
-			// 
+
 			// array.length
 			if (gc_obj->type == GC_Obj_Type::Array && sub->right->type == AST_Node_Type::Var) {
 				GC_Obj_Array* arr = (GC_Obj_Array*) gc_obj;
@@ -413,6 +413,7 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 					return {val};
 				}
 
+				// array.remove_at(index)
 				if (var->name == "remove_at") {
 					if (fcall->args.size() != 1) {
 						error("Incorrect number of args", node);
@@ -429,6 +430,15 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 					arr->arr.erase(arr->arr.begin() + index);
 
 					return {removed_val};
+				}
+			}
+
+			// string.length
+			if (gc_obj->type == GC_Obj_Type::String && sub->right->type == AST_Node_Type::Var) {
+				GC_Obj_String* str = (GC_Obj_String*) gc_obj;
+				AST_Var* var = (AST_Var*) sub->right.get();
+				if (var->name == "length") {
+					return {Value::from_num(str->str.size())};
 				}
 			}
 
@@ -815,27 +825,39 @@ Eval_Result Interpreter::eval_node(AST_Node* node, Scope* scope, GC_Obj_Instance
 		}
 
 		GC_Obj* gc_obj = (GC_Obj*) expr_val.as.ptr;
-		if (gc_obj->type != GC_Obj_Type::Array) {
-			error("i can only subscript arrays man", node);
-		}
 
 		Value subscript_val = eval_node(sub->subscript.get(), scope).value;
 		if (subscript_val.type != Value_Type::Num) {
-			error("Not a number", node);
+			error("Expected a number index", node);
 		}
 
 		int index = (int) subscript_val.as.num;
+		if (gc_obj->type == GC_Obj_Type::Array) {
+			GC_Obj_Array* arr = (GC_Obj_Array*) gc_obj;
 
-		GC_Obj_Array* arr = (GC_Obj_Array*) gc_obj;
+			if (index < 0 || index >= arr->arr.size()) {
+				error("Out of bounds", node);
+			}
 
-		if (index < 0 || index >= arr->arr.size()) {
-			error("Out of bounds", node);
+			Eval_Result result;
+			result.ref = &arr->arr[index];
+			result.value = arr->arr[index];
+			return result;
+		} else if (gc_obj->type == GC_Obj_Type::String) {
+			GC_Obj_String* str = (GC_Obj_String*) gc_obj;
+
+			if (index < 0 || index >= str->str.size()) {
+				error("Out of bounds", node);
+			}
+
+			Eval_Result result;
+			result.ref = nullptr; // strings are immutable
+			result.value = create_string(std::string(1, str->str[index])); // this is so slow...
+			return result;
 		}
 
-		Eval_Result result;
-		result.ref = &arr->arr[index];
-		result.value = arr->arr[index];
-		return result;
+		error("Expression is not subscriptable (expected array, string, etc..)", node);
+		break;
 	}
 	case AST_Node_Type::Class_Decl: {
 		AST_Class_Decl* sub = (AST_Class_Decl*) node;
