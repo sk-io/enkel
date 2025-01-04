@@ -1,3 +1,4 @@
 *.o
-framework/framework
-enkel/libenkel.a
+/framework/framework
+/enkel/libenkel.a
+/enkelfw
