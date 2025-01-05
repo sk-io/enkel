@@ -228,6 +228,9 @@ static std::vector<Token> load_tokens(const std::string& script_path) {
 	uint64_t siz;
 	char* buf = read_file(script_path, siz);
 
+	if (siz == 0)
+		return {};
+
 	int file_index = fw.script_paths.size();
 
 	std::vector<Token> tokens = Lexer::lex(buf);
@@ -250,6 +253,8 @@ static std::vector<Token> load_tokens(const std::string& script_path) {
 				auto absolute_path = std::filesystem::absolute(script_path).parent_path() / import_path;
 
 				std::vector<Token> imported_tokens = load_tokens(absolute_path.string());
+				if (imported_tokens.size() == 0)
+					continue;
 				tokens.insert(tokens.begin() + i, imported_tokens.begin(), imported_tokens.end());
 			}
 		}

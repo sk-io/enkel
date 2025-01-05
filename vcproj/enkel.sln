@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35219.272
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "enkel", "enkel.vcxproj", "{C72EBC20-8C8C-4F27-9745-2BFB1DD77BDA}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "framework", "framework.vcxproj", "{C5BA888A-6C99-4E5C-9570-1B91EE02211D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C72EBC20-8C8C-4F27-9745-2BFB1DD77BDA} = {C72EBC20-8C8C-4F27-9745-2BFB1DD77BDA}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C72EBC20-8C8C-4F27-9745-2BFB1DD77BDA}.Debug|x64.ActiveCfg = Debug|x64
+		{C72EBC20-8C8C-4F27-9745-2BFB1DD77BDA}.Debug|x64.Build.0 = Debug|x64
+		{C72EBC20-8C8C-4F27-9745-2BFB1DD77BDA}.Release|x64.ActiveCfg = Release|x64
+		{C72EBC20-8C8C-4F27-9745-2BFB1DD77BDA}.Release|x64.Build.0 = Release|x64
+		{C5BA888A-6C99-4E5C-9570-1B91EE02211D}.Debug|x64.ActiveCfg = Debug|x64
+		{C5BA888A-6C99-4E5C-9570-1B91EE02211D}.Debug|x64.Build.0 = Debug|x64
+		{C5BA888A-6C99-4E5C-9570-1B91EE02211D}.Release|x64.ActiveCfg = Release|x64
+		{C5BA888A-6C99-4E5C-9570-1B91EE02211D}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A43D8778-323D-4E86-94F4-D1FCAD3C1ABA}
+	EndGlobalSection
+EndGlobal
