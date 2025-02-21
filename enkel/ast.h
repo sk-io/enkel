@@ -77,9 +77,10 @@ struct AST_Bin_Op : public AST_Node {
 
 struct AST_Block : public AST_Node {
 	std::vector<std::unique_ptr<AST_Node>> statements;
+	bool is_global_scope;
 
-	AST_Block(Source_Info _src_info) :
-		AST_Node(AST_Node_Type::Block, _src_info) {}
+	AST_Block(Source_Info _src_info, bool _is_global_scope = false) :
+		AST_Node(AST_Node_Type::Block, _src_info), is_global_scope(_is_global_scope) {}
 };
 
 struct AST_Var_Decl : public AST_Node {

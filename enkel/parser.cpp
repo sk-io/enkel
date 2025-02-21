@@ -4,7 +4,7 @@
 #include <iostream>
 
 std::unique_ptr<AST_Node> Parser::parse() {
-    std::unique_ptr<AST_Block> block = std::make_unique<AST_Block>(peek().src_info);
+    std::unique_ptr<AST_Block> block = std::make_unique<AST_Block>(peek().src_info, true);
 
     while (peek().type != Token_Type::End_Of_File) {
         block->statements.push_back(parse_statement());
