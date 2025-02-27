@@ -25,7 +25,7 @@ void testo() {
 	}});
 
 	//auto tokens = Lexer::lex("var x = 5; while (x <= 69) { x += 1; } ");
-	auto tokens = Lexer::lex("func test() { var x = 52; return x*5; } print(test());");
+	auto tokens = Lexer::lex("func test(x, y) { return x - y; } if (1 < 100) print(test(2, 1));");
 	Parser parser(tokens);
 	auto ast = parser.parse();
 

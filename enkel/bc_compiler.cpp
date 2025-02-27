@@ -1,4 +1,5 @@
 #include "bc_compiler.h"
+#include "ast.h"
 
 #include <iostream>
 #include <algorithm>
@@ -17,8 +18,28 @@ BC_Program BC_Compiler::compile(AST_Node* node) {
 
 		func.entry = program.code.size();
 
+		uint32_t num_vars_backpatch;
+		output_u8(BC_ALLOC_FRAME_U8);
+		num_vars_backpatch = program.code.size();
+		output_u8((uint8_t) -1);
+
 		BC_Frame func_frame;
-		compile_node(func.body_node, func_frame);
+
+		// pop args in reverse order
+		for (int j = 0; j < func.node->args.size(); j++) {
+			const Definition& arg_def = func.node->args[j];
+
+			int var_index = func_frame.vars.size();
+			func_frame.vars.push_back(arg_def.name);
+
+			output_u8(BC_POP_VAR_U8);
+			output_u8(func.node->args.size() - 1 - j);
+		}
+
+		compile_node(func.node->body.get(), func_frame);
+		
+		// backpatch number of local vars
+		write_u8_at(func_frame.vars.size(), num_vars_backpatch);
 
 		output_u8(BC_PUSH_NULL);
 		output_u8(BC_RET);
@@ -136,12 +157,14 @@ void BC_Compiler::compile_node(AST_Node* node, BC_Frame& frame) {
 		return;
 	}
 	case AST_Node_Type::Func_Decl: {
+		// function bodies are generated at the end, so just store the ref here
+		
 		AST_Func_Decl* sub = (AST_Func_Decl*) node;
 
 		BC_Func func = {0};
 		func.entry = (uint32_t) -1;
 		func.name = sub->name;
-		func.body_node = sub->body.get();
+		func.node = sub;
 
 		uint16_t func_index = program.func_table.size();
 		program.func_table.push_back(func);

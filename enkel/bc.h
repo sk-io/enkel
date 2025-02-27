@@ -34,12 +34,12 @@ enum {
 	BC_JUMP_IF_FALSE_U32,
 };
 
-struct AST_Node;
+struct AST_Func_Decl;
 
 struct BC_Func {
 	uint32_t entry;
 	std::string name;
-	AST_Node* body_node; // only used during compilation
+	AST_Func_Decl* node; // only used during compilation
 };
 
 struct BC_Program {

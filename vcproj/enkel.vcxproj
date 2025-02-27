@@ -149,7 +149,12 @@
   <ItemGroup>
     <ClInclude Include="..\enkel\ast.h" />
     <ClInclude Include="..\enkel\ast_util.h" />
+    <ClInclude Include="..\enkel\bc.h" />
+    <ClInclude Include="..\enkel\bc_compiler.h" />
+    <ClInclude Include="..\enkel\bc_util.h" />
+    <ClInclude Include="..\enkel\bc_vm.h" />
     <ClInclude Include="..\enkel\definition.h" />
+    <ClInclude Include="..\enkel\extern_func.h" />
     <ClInclude Include="..\enkel\gc.h" />
     <ClInclude Include="..\enkel\interpreter.h" />
     <ClInclude Include="..\enkel\lexer.h" />
@@ -162,6 +167,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\enkel\ast_util.cpp" />
+    <ClCompile Include="..\enkel\bc_compiler.cpp" />
+    <ClCompile Include="..\enkel\bc_util.cpp" />
+    <ClCompile Include="..\enkel\bc_vm.cpp" />
     <ClCompile Include="..\enkel\gc.cpp" />
     <ClCompile Include="..\enkel\interpreter.cpp" />
     <ClCompile Include="..\enkel\lexer.cpp" />
