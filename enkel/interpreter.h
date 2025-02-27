@@ -6,6 +6,7 @@
 #include "definition.h"
 #include "gc.h"
 #include "source_info.h"
+#include "extern_func.h"
 
 #include <functional>
 #include <vector>
@@ -25,12 +26,6 @@ struct Eval_Result {
 };
 
 class Interpreter;
-
-struct Extern_Func {
-	std::string name;
-	int min_args = 0;
-	std::function<Value(Interpreter& interp, const std::vector<Value>&)> callback;
-};
 
 struct Class_Decl {
 	std::string name;

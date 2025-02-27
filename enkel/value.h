@@ -7,6 +7,7 @@ enum class Value_Type {
 	Num,
 	Bool,
 	GC_Obj,
+	BC_Func_Ref,
 	Func_Ref,
 	Extern_Func,
 };

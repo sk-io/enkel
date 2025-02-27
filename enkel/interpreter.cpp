@@ -9,7 +9,7 @@ Interpreter::Interpreter() :
 	global_scope(nullptr, nullptr) {
 
 	// typeof(value)
-	add_external_func({"typeof", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	add_external_func({"typeof", 1, [this](const std::vector<Value>& args, void* data_ptr) -> Value {
 		const Value& val = args[0];
 
 		std::string result;
@@ -51,20 +51,22 @@ Interpreter::Interpreter() :
 	}});
 
 	// _run_gc()  [temporary]
-	add_external_func({"_run_gc", 0, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	add_external_func({"_run_gc", 0, [this](const std::vector<Value>& args, void* data_ptr) -> Value {
 		// TODO: run from current scope???
 		heap.garbage_collect(global_scope);
 		return {};
 	}});
 
 	// print(value)
-	add_external_func({"print", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	add_external_func({"print", 1, [this](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
 		std::cout << "print(): " << interp.get_string(args[0]) << "\n";
 		return {};
 	}});
 
 	// min(value)
-	add_external_func({"min", 2, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	add_external_func({"min", 2, [this](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
 		float a = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
 		float b = expect_value(args[1], Value_Type::Num, interp.extern_func_node).as.num;
 
@@ -72,7 +74,8 @@ Interpreter::Interpreter() :
 	}});
 
 	// max(value)
-	add_external_func({"max", 2, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	add_external_func({"max", 2, [this](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
 		float a = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
 		float b = expect_value(args[1], Value_Type::Num, interp.extern_func_node).as.num;
 
@@ -80,28 +83,32 @@ Interpreter::Interpreter() :
 	}});
 
 	// abs(value)
-	add_external_func({"abs", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	add_external_func({"abs", 1, [this](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
 		float x = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
 
 		return Value::from_num(std::abs(x));
 	}});
 
 	// floor(value)
-	add_external_func({"floor", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	add_external_func({"floor", 1, [this](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
 		float x = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
 
 		return Value::from_num(std::floor(x));
 	}});
 
 	// ceil(value)
-	add_external_func({"ceil", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	add_external_func({"ceil", 1, [this](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
 		float x = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
 
 		return Value::from_num(std::ceil(x));
 	}});
 
 	// lerp(a, b, ratio)
-	add_external_func({"lerp", 3, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	add_external_func({"lerp", 3, [this](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
 		float a = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
 		float b = expect_value(args[1], Value_Type::Num, interp.extern_func_node).as.num;
 		float ratio = expect_value(args[2], Value_Type::Num, interp.extern_func_node).as.num;
@@ -110,7 +117,8 @@ Interpreter::Interpreter() :
 	}});
 
 	// clamp(value, min, max) or clamp(value, max)
-	add_external_func({"clamp", 2, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	add_external_func({"clamp", 2, [this](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
 		float value = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
 		float min_val = 0;
 		float max_val;
@@ -132,7 +140,8 @@ Interpreter::Interpreter() :
 	// min is inclusive, max is exclusive
 	// returns value wrapped around [min, max]
 	// example: wrap(-1, 0, 10) returns 9
-	add_external_func({"wrap", 2, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	add_external_func({"wrap", 2, [this](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
 		float value = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
 		float min_val = 0;
 		float max_val;
@@ -156,25 +165,29 @@ Interpreter::Interpreter() :
 	}});
 
 	// sqrt(value)
-	add_external_func({"sqrt", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	add_external_func({"sqrt", 1, [this](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
 		float x = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
 		return Value::from_num(std::sqrt(x));
 	}});
 
 	// sin(value)
-	add_external_func({"sin", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	add_external_func({"sin", 1, [this](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
 		float x = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
 		return Value::from_num(std::sin(x));
 	}});
 
 	// cos(value)
-	add_external_func({"cos", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	add_external_func({"cos", 1, [this](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
 		float x = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
 		return Value::from_num(std::cos(x));
 	}});
 
 	// tan(value)
-	add_external_func({"tan", 1, [this](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	add_external_func({"tan", 1, [this](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
 		float x = expect_value(args[0], Value_Type::Num, interp.extern_func_node).as.num;
 		return Value::from_num(std::tan(x));
 	}});
@@ -243,7 +256,7 @@ Value Interpreter::call_function(Value func_ref, const std::vector<Value>& args,
 		}
 
 		extern_func_node = node;
-		return func.callback(*this, args);
+		return func.callback(args, (void*) this);
 	}
 
 	AST_Func_Decl* func_decl = (AST_Func_Decl*) func_ref.as.ptr;
@@ -276,6 +289,7 @@ Value Interpreter::create_string(const std::string& str) {
 	return val;
 }
 
+// TODO: does this need to be here?
 const Value& Interpreter::expect_value(const Value& val, Value_Type expected_type, const AST_Node* node) const {
 	if (val.type != expected_type) {
 		error("Unexpected value type", node);

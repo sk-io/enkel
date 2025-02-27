@@ -41,10 +41,15 @@ static char* read_file(const std::string& path, uint64_t& size) {
 }
 
 static void register_funcs() {
+	auto expect_type = [] (Interpreter& interp, const Value& val, Value_Type type) -> const Value& {
+		return interp.expect_value(val, Value_Type::Num, interp.extern_func_node);
+	};
+
 	// --- window ---
-	fw.interp.add_external_func({"set_size", 2, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
-		int width = args[0].as.num;
-		int height = args[1].as.num;
+	fw.interp.add_external_func({"set_size", 2, [&](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
+		int width = expect_type(interp, args[0], Value_Type::Num).as.num;
+		int height = expect_type(interp, args[1], Value_Type::Num).as.num;
 
 		fw.width = width;
 		fw.height = height;
@@ -56,25 +61,28 @@ static void register_funcs() {
 		return {};
 	}});
 
-	fw.interp.add_external_func({"set_title", 1, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	fw.interp.add_external_func({"set_title", 1, [&](const std::vector<Value>& args, void* data_ptr) -> Value {
 		fw.title = fw.interp.get_string(args[0]);
 		SDL_SetWindowTitle(fw.window, fw.title.c_str());
 		return {};
 	}});
 
-	fw.interp.add_external_func({"set_resizable", 1, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
-		bool resizable = args[0].as._bool;
+	fw.interp.add_external_func({"set_resizable", 1, [&](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
+		bool resizable = expect_type(interp, args[0], Value_Type::Bool).as._bool;
 		SDL_SetWindowResizable(fw.window, (SDL_bool) resizable);
 		return {};
 	}});
 
 	// --- graphics ---
-	fw.interp.add_external_func({"clear", 0, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	fw.interp.add_external_func({"clear", 0, [&](const std::vector<Value>& args, void* data_ptr) -> Value {
 		gfx.clear();
 		return {};
 	}});
 
-	fw.interp.add_external_func({"set_color", 1, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	fw.interp.add_external_func({"set_color", 1, [&](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
+
 		uint32_t i = 0;
 		if (args[0].type == Value_Type::GC_Obj) {
 			// TODO: make sure its a string
@@ -96,38 +104,46 @@ static void register_funcs() {
 		return {};
 	}});
 
-	fw.interp.add_external_func({"fill_rect", 4, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
-		float x = args[0].as.num;
-		float y = args[1].as.num;
-		float w = args[2].as.num;
-		float h = args[3].as.num;
+	fw.interp.add_external_func({"fill_rect", 4, [&](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
+
+		float x = expect_type(interp, args[0], Value_Type::Num).as.num;
+		float y = expect_type(interp, args[1], Value_Type::Num).as.num;
+		float w = expect_type(interp, args[2], Value_Type::Num).as.num;
+		float h = expect_type(interp, args[3], Value_Type::Num).as.num;
 
 		gfx.fill_rect(x, y, w, h);
 		return {};
 	}});
 
-	fw.interp.add_external_func({"load_image", 1, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	fw.interp.add_external_func({"load_image", 1, [&](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
+
 		const std::string& path = interp.get_string(args[0]);
 		int id = fw.images.size();
 		fw.images.push_back(Image(path));
 		return {Value::from_num(id)};
 	}});
 	
-	fw.interp.add_external_func({"draw_image", 3, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
-		int id = (int) args[0].as.num;
-		float x = args[1].as.num;
-		float y = args[2].as.num;
+	fw.interp.add_external_func({"draw_image", 3, [&](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
+
+		int id = (int) expect_type(interp, args[0], Value_Type::Num).as.num;
+		float x = expect_type(interp, args[1], Value_Type::Num).as.num;
+		float y = expect_type(interp, args[2], Value_Type::Num).as.num;
 
 		const Image& img = fw.images[id];
-		float w = args.size() >= 4 ? args[3].as.num : img.get_width();
-		float h = args.size() >= 5 ? args[4].as.num : img.get_height();
+		float w = args.size() >= 4 ? expect_type(interp, args[3], Value_Type::Num).as.num : img.get_width();
+		float h = args.size() >= 5 ? expect_type(interp, args[4], Value_Type::Num).as.num : img.get_height();
 
 		gfx.draw_img(img, x, y, w, h);
 		return {};
 	}});
 
 	// --- input ---
-	fw.interp.add_external_func({"key_pressed", 1, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	fw.interp.add_external_func({"key_pressed", 1, [&](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
+
 		SDL_Keycode code = SDL_GetKeyFromName(interp.get_string(args[0]).c_str());
 
 		if (code == SDLK_UNKNOWN) {
@@ -137,7 +153,9 @@ static void register_funcs() {
 		return {Value::from_bool(is_key_down(code))};
 	}});
 
-	fw.interp.add_external_func({"mouse_pressed", 1, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	fw.interp.add_external_func({"mouse_pressed", 1, [&](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
+
 		const auto& button = interp.get_string(args[0]);
 
 		bool result;
@@ -155,19 +173,35 @@ static void register_funcs() {
 	}});
 
 	// --- utils ---
-	fw.interp.add_external_func({"rand", 0, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	fw.interp.add_external_func({"rand", 0, [&](const std::vector<Value>& args, void* data_ptr) -> Value {
 		return {Value::from_num(rand() / (RAND_MAX + 1.0f))};
 	}});
 
-	fw.interp.add_external_func({"set_framerate", 1, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
-		float fps = args[0].as.num;
+	fw.interp.add_external_func({"set_framerate", 1, [&](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
+
+		float fps = expect_type(interp, args[0], Value_Type::Num).as.num;
 		fw.framerate = fps;
 		return {};
 	}});
 
-	fw.interp.add_external_func({"exit", 0, [&](Interpreter& interp, const std::vector<Value>& args) -> Value {
+	fw.interp.add_external_func({"exit", 0, [&](const std::vector<Value>& args, void* data_ptr) -> Value {
 		fw.running = false;
 		return {};
+	}});
+
+	fw.interp.add_external_func({"read_file", 1, [&](const std::vector<Value>& args, void* data_ptr) -> Value {
+		Interpreter& interp = *(Interpreter*) data_ptr;
+
+		const auto& path = interp.get_string(args[0]);
+
+		uint64_t size;
+		char* buf = read_file(path, size);
+
+		Value str_val = interp.create_string(buf); // TODO: avoid unnecessary strlen
+		free(buf);
+
+		return {str_val};
 	}});
 }
 

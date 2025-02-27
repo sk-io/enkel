@@ -14,12 +14,12 @@ struct BC_Frame {
 
 class BC_VM {
 public:
-	void run(const BC_Program* program);
+	void run(const BC_Program* program, const std::vector<Extern_Func>& extern_funcs);
 
 	uint8_t eat_u8();
 	uint16_t eat_u16();
 	uint32_t eat_u32();
-	float eat_float();
+	float eat_f32();
 private:
 	const BC_Program* program = nullptr;
 
