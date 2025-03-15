@@ -169,14 +169,6 @@ void BC_Compiler::compile_node(AST_Node* node, BC_Frame& frame) {
 		uint16_t func_index = program.func_table.size();
 		program.func_table.push_back(func);
 
-		int var_index = frame.vars.size();
-		frame.vars.push_back(sub->name);
-
-		output_u8(BC_PUSH_FUNC_REF_U32);
-		output_u32(func_index);
-
-		output_u8(BC_POP_VAR_U8);
-		output_u8(var_index);
 		return;
 	}
 	case AST_Node_Type::Var_Decl: {
@@ -197,6 +189,17 @@ void BC_Compiler::compile_node(AST_Node* node, BC_Frame& frame) {
 	}
 	case AST_Node_Type::Var: {
 		AST_Var* sub = (AST_Var*) node;
+
+		for (int i = 0; i < program.func_table.size(); i++) {
+			const BC_Func& func = program.func_table[i];
+
+			if (func.name == sub->name) {
+				output_u8(BC_PUSH_FUNC_REF_U32);
+				output_u32(i);
+				return;
+			}
+		}
+
 		int index = find_var_index(sub->name, frame);
 
 		output_u8(BC_PUSH_VAR_U8);
